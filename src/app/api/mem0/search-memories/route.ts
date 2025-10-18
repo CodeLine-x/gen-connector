@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createMem0Service } from "@/lib/mem0Service";
+import { createMem0Service, SearchParams } from "@/lib/mem0Service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const mem0 = createMem0Service();
 
     // Search memories with optional entity filtering
-    const searchParams: any = {
+    const searchParams: SearchParams = {
       query,
       limit,
     };
