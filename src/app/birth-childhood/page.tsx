@@ -2,37 +2,39 @@ import Link from "next/link";
 
 export default function BirthChildhood() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-rose-100 dark:from-gray-900 dark:to-gray-800 p-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-8 pt-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-rose-100 dark:from-gray-900 dark:to-gray-800 p-4 flex items-center justify-center">
+      <div className="max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto w-full">
+        <div className="text-center mb-4 sm:mb-6 lg:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-4">
             Birth and Childhood
           </h1>
-          <p className="text-gray-600 dark:text-gray-300 text-lg">
+          <p className="text-gray-600 dark:text-gray-300 text-base sm:text-lg lg:text-xl">
             Explore early life experiences and formative years
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 md:p-12 text-center">
-          <div className="text-6xl mb-6">👶</div>
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 md:p-10 lg:p-12 text-center">
+          <div className="text-4xl sm:text-5xl lg:text-6xl mb-4 sm:mb-6">
+            👶
+          </div>
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
             Coming Soon
           </h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-8">
+          <p className="text-gray-600 dark:text-gray-300 mb-6 sm:mb-8 text-sm sm:text-base lg:text-lg">
             This section is under development. Check back soon for interactive
             content about birth and childhood experiences.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Link
               href="/categories"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors duration-200"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 sm:py-3 sm:px-6 lg:py-4 lg:px-8 rounded-xl transition-colors duration-200 text-sm sm:text-base"
             >
               Back to Categories
             </Link>
             <Link
               href="/"
-              className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold py-3 px-6 rounded-xl transition-colors duration-200"
+              className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold py-2 px-4 sm:py-3 sm:px-6 lg:py-4 lg:px-8 rounded-xl transition-colors duration-200 text-sm sm:text-base"
             >
               Home
             </Link>
