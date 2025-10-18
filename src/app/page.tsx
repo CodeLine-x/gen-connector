@@ -1,35 +1,78 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <div className="max-w-md lg:max-w-lg xl:max-w-xl w-full text-center">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 md:p-10 lg:p-12 xl:p-16">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
-            Welcome
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300 mb-6 sm:mb-8 text-base sm:text-lg lg:text-xl">
-            Ready to begin your journey?
-          </p>
-          <div className="space-y-4">
-            <Link
-              href="/auth/login"
-              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 sm:py-4 sm:px-8 lg:py-5 lg:px-10 rounded-xl text-base sm:text-lg lg:text-xl transition-colors duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 w-full"
-            >
-              Sign In to Begin
-            </Link>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Don&apos;t have an account?{" "}
-              <Link
-                href="/auth/signup"
-                className="text-blue-600 hover:text-blue-500 font-medium"
-              >
-                Sign up here
-              </Link>
-            </p>
-          </div>
+    <main className="min-h-screen bg-black text-white flex items-center justify-center p-4">
+      {/* Mobile-First Layout */}
+      <div className="w-full max-w-md flex flex-col items-center justify-center space-y-6 md:max-w-2xl lg:max-w-4xl">
+        {/* Welcome Text */}
+        <h2
+          className="text-center text-white"
+          style={{
+            fontFamily: "var(--font-jersey)",
+            fontSize: "32px",
+            letterSpacing: "0.02em",
+          }}
+        >
+          Welcome to
+        </h2>
+
+        {/* THROWBACK Title */}
+        <h1
+          className="text-center text-white leading-tight"
+          style={{
+            fontFamily: "var(--font-mansalva)",
+            fontSize: "48px",
+            letterSpacing: "0.02em",
+          }}
+        >
+          THRoWBACK
+        </h1>
+
+        {/* Nostalgic Image */}
+        <div className="w-full aspect-[3/4] relative rounded-2xl overflow-hidden shadow-2xl">
+          <Image
+            src="/1.1 - Living Room placeholder.png"
+            alt="Nostalgic living room with vintage TV and furniture"
+            fill
+            className="object-cover"
+            priority
+          />
         </div>
+
+        {/* Tagline */}
+        <p
+          className="text-center text-white px-4"
+          style={{
+            fontFamily: "var(--font-jersey)",
+            fontSize: "24px",
+            lineHeight: "1.4",
+            letterSpacing: "0.01em",
+          }}
+        >
+          Connect across generations,
+          <br />
+          one story at a time.
+        </p>
+
+        {/* Play Button */}
+        <Link href="/categories">
+          <button
+            className="px-12 py-4 rounded-full transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg"
+            style={{
+              background:
+                "linear-gradient(135deg, #FFA726 0%, #FF9800 50%, #FB8C00 100%)",
+              fontFamily: "var(--font-jersey)",
+              fontSize: "32px",
+              color: "#000000",
+              fontWeight: "500",
+            }}
+          >
+            Play
+          </button>
+        </Link>
       </div>
-    </div>
+    </main>
   );
 }

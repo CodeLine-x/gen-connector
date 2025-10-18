@@ -1,21 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Jersey_15, Mansalva } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const jersey15 = Jersey_15({
+  weight: "400",
+  variable: "--font-jersey",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const mansalva = Mansalva({
+  weight: "400",
+  variable: "--font-mansalva",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Life Journey App",
-  description:
-    "Explore different stages of life through interactive categories",
+  title: "THROWBACK - Connect Across Generations",
+  description: "Connect across generations, one story at a time.",
 };
 
 export default function RootLayout({
@@ -25,9 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${jersey15.variable} ${mansalva.variable} antialiased`}>
         {children}
       </body>
     </html>
