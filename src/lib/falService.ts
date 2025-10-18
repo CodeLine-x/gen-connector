@@ -179,6 +179,23 @@ export async function generateImageWithRetry(
       lastError = error instanceof Error ? error : new Error("Unknown error");
       console.error(`Attempt ${attempt + 1} failed:`, lastError.message);
 
+      // If it's a payload size error, return placeholder immediately
+      if (
+        lastError.message.includes("413") ||
+        lastError.message.includes("payload")
+      ) {
+        console.log("⚠️ Payload too large, returning placeholder image");
+        return {
+          image: {
+            url: getPlaceholderImageUrl(),
+            content_type: "image/png",
+            file_name: "placeholder.png",
+            file_size: 0,
+          },
+          seed: 0,
+        };
+      }
+
       // Wait a bit before retrying
       if (attempt < maxRetries) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -209,6 +226,15 @@ export async function generateVideoWithRetry(
     } catch (error) {
       lastError = error instanceof Error ? error : new Error("Unknown error");
       console.error(`Attempt ${attempt + 1} failed:`, lastError.message);
+
+      // If it's a payload size error, return null to trigger fallback
+      if (
+        lastError.message.includes("413") ||
+        lastError.message.includes("payload")
+      ) {
+        console.log("⚠️ Payload too large for video generation");
+        return null;
+      }
 
       // Wait a bit before retrying
       if (attempt < maxRetries) {

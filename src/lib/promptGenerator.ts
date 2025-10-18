@@ -128,7 +128,8 @@ Generate photorealistic prompts for this memory. Focus on visual details, emotio
  */
 export async function generateVideoPromptFromSession(
   allTurns: ConversationTurn[],
-  riteOfPassage?: string
+  riteOfPassage?: string,
+  memories: any[] = []
 ): Promise<PromptGenerationResult> {
   try {
     console.log("🎬 Generating session video prompt with GPT-3.5-turbo...");
@@ -163,14 +164,22 @@ Return ONLY a valid JSON object with this exact structure:
   "location": "string or null"
 }`;
 
+    // Include memories for richer context
+    const memoryContext =
+      memories.length > 0
+        ? `\n\nPrevious memories and context:\n${memories
+            .map((m) => `- ${m.text}`)
+            .join("\n")}`
+        : "";
+
     const userPrompt = `${context}
     
 Complete conversation memories:
 "${elderlyResponses.slice(0, 1500)}" ${
       elderlyResponses.length > 1500 ? "..." : ""
-    }
+    }${memoryContext}
 
-Generate a cinematic video prompt that captures the essence and emotional journey of this conversation.`;
+Generate a cinematic video prompt that captures the essence and emotional journey of this conversation, incorporating the broader context and previous memories.`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",

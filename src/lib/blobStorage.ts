@@ -14,8 +14,19 @@ export async function downloadAndUploadToBlob(
   try {
     console.log(`📥 Downloading file from: ${sourceUrl}`);
 
-    // Download the file from the source URL
-    const response = await fetch(sourceUrl);
+    // Download the file from the source URL with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    const response = await fetch(sourceUrl, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; BlobStorage/1.0)",
+      },
+    });
+
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
       throw new Error(
         `Failed to download file: ${response.status} ${response.statusText}`
@@ -23,6 +34,15 @@ export async function downloadAndUploadToBlob(
     }
 
     const blob = await response.blob();
+
+    // Check file size (max 25MB for Vercel functions)
+    const maxSize = 25 * 1024 * 1024; // 25MB
+    if (blob.size > maxSize) {
+      throw new Error(
+        `File too large: ${blob.size} bytes (max ${maxSize} bytes)`
+      );
+    }
+
     console.log(`✅ Downloaded ${blob.size} bytes`);
 
     // Upload to Vercel Blob via our API route
@@ -41,10 +61,17 @@ export async function downloadAndUploadToBlob(
 
     console.log(`📤 Uploading to Vercel Blob: ${filename}`);
 
+    // Add timeout to upload process
+    const uploadController = new AbortController();
+    const uploadTimeoutId = setTimeout(() => uploadController.abort(), 60000); // 60 second timeout
+
     const uploadResponse = await fetch(uploadUrl, {
       method: "POST",
       body: formData,
+      signal: uploadController.signal,
     });
+
+    clearTimeout(uploadTimeoutId);
 
     if (!uploadResponse.ok) {
       const errorText = await uploadResponse.text();

@@ -153,7 +153,34 @@ export default function ConversationFlow({
           setCurrentScreen("message");
         }
 
-        // Step 4: Check for song mentions first (priority over images)
+        // Step 4: Store conversation memory in Mem0
+        try {
+          const memoryResponse = await fetch("/api/mem0/add-memory", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: `Segment ${segmentNumber} conversation: ${conversationTurns
+                .map((t: any) => `${t.speaker}: ${t.transcript}`)
+                .join(" ")
+                .slice(0, 1000)}`, // Limit to 1000 chars to avoid payload size issues
+              metadata: {
+                sessionId,
+                segmentNumber,
+                category,
+                timestamp: new Date().toISOString(),
+              },
+              entityId: sessionId,
+            }),
+          });
+
+          if (memoryResponse.ok) {
+            console.log(`🧠 Memory stored for segment ${segmentNumber}`);
+          }
+        } catch (error) {
+          console.error("Error storing memory:", error);
+        }
+
+        // Step 5: Check for song mentions first (priority over images)
         const songSearchResponse = await fetch("/api/search-song", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -172,6 +199,31 @@ export default function ConversationFlow({
               `🎵 Song found for segment ${segmentNumber}:`,
               songResult.songTitle
             );
+
+            // Store music preference memory
+            try {
+              await fetch("/api/mem0/add-memory", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  text: `Music preference discovered: ${
+                    songResult.songTitle
+                  } by ${songResult.artistName || "Unknown artist"}`,
+                  metadata: {
+                    sessionId,
+                    category: "music_preferences",
+                    artist: songResult.artistName,
+                    song: songResult.songTitle,
+                    era: songResult.era,
+                    confidence: songResult.confidence,
+                  },
+                  entityId: sessionId,
+                }),
+              });
+              console.log(`🧠 Music preference memory stored`);
+            } catch (error) {
+              console.error("Error storing music memory:", error);
+            }
 
             // Add song to media items
             setMediaItems((prev) => [
@@ -295,7 +347,37 @@ export default function ConversationFlow({
         );
       }
 
-      // Generate video from all turns
+      // Load memories to enhance video generation
+      let userMemories = [];
+      try {
+        const memoriesResponse = await fetch("/api/mem0/search-memories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query: `family history and preferences for ${category}`,
+            entityId: sessionId,
+            limit: 3, // Reduced from 10 to 3 to prevent payload size issues
+          }),
+        });
+
+        if (memoriesResponse.ok) {
+          const { results } = await memoriesResponse.json();
+          // Limit memories to prevent payload size issues
+          userMemories = (results.memories || [])
+            .slice(0, 5)
+            .map((memory: any) => ({
+              ...memory,
+              text: memory.text.slice(0, 500), // Limit memory text to 500 chars
+            }));
+          console.log(
+            `🧠 Using ${userMemories.length} memories for video generation`
+          );
+        }
+      } catch (error) {
+        console.error("Error loading memories for video:", error);
+      }
+
+      // Generate video from all turns with memories
       const videoResponse = await fetch("/api/fal/generate-video", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -304,6 +386,7 @@ export default function ConversationFlow({
           turns: allTurns,
           riteOfPassage: category,
           songUrl: selectedSongUrl, // Include found song if available
+          memories: userMemories, // Include user memories for richer context
         }),
       });
 
@@ -339,6 +422,35 @@ export default function ConversationFlow({
   // Handler for title screen completion
   const handleTitleComplete = async () => {
     console.log("Title screen complete, transitioning to beginning...");
+
+    // Load user memories for personalized experience
+    try {
+      const memoriesResponse = await fetch("/api/mem0/search-memories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: `previous ${category} conversations and preferences`,
+          entityId: sessionId,
+          limit: 3, // Reduced from 5 to 3 to prevent payload size issues
+        }),
+      });
+
+      if (memoriesResponse.ok) {
+        const { results } = await memoriesResponse.json();
+        console.log(`🧠 Loaded ${results.total} memories for personalization`);
+
+        // Store memories for later use in video generation
+        if (results.memories && results.memories.length > 0) {
+          console.log(
+            "📝 User memories:",
+            results.memories.map((m: any) => m.text)
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error loading memories:", error);
+    }
+
     setCurrentScreen("beginning");
 
     // Create session in database

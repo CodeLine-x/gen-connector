@@ -6,7 +6,7 @@ import { uploadVideoToBlob } from "@/lib/blobStorage";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { turns, riteOfPassage, sessionId, songUrl } = body;
+    const { turns, riteOfPassage, sessionId, songUrl, memories = [] } = body;
 
     if (!turns || !Array.isArray(turns)) {
       return NextResponse.json(
@@ -26,10 +26,11 @@ export async function POST(request: NextRequest) {
       console.log("🎬 No song found - will generate AI video without audio");
     }
 
-    // Step 1: Generate comprehensive video prompt from all conversation
+    // Step 1: Generate comprehensive video prompt from all conversation and memories
     const promptResult = await generateVideoPromptFromSession(
       turns,
-      riteOfPassage
+      riteOfPassage,
+      memories
     );
 
     console.log("Generated video prompt:", promptResult.videoPrompt);
