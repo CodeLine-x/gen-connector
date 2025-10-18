@@ -1,3 +1,16 @@
+export interface ArchiveMetadata {
+  photographer?: string;
+  collection?: string;
+  tags?: string[];
+  copyright?: string;
+  rights?: string;
+  format?: string;
+  dimensions?: string;
+  condition?: string;
+  notes?: string;
+  [key: string]: string | string[] | undefined;
+}
+
 export interface ArchiveImage {
   id: string;
   title: string;
@@ -6,7 +19,7 @@ export interface ArchiveImage {
   date?: string;
   location?: string;
   source: string;
-  metadata?: any;
+  metadata?: ArchiveMetadata;
 }
 
 export interface SearchFilters {

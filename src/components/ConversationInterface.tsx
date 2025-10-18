@@ -16,10 +16,20 @@ interface ConversationTurn {
   audioUrl?: string;
 }
 
+interface SessionData {
+  id: string;
+  user_id: string;
+  rite_of_passage: string;
+  created_at: string;
+  status: string;
+  title?: string;
+  summary?: string;
+}
+
 interface ConversationInterfaceProps {
   riteOfPassage: RiteOfPassage;
   sessionId: string;
-  onSessionUpdate?: (sessionData: any) => void;
+  onSessionUpdate?: (sessionData: SessionData) => void;
 }
 
 export default function ConversationInterface({
@@ -65,6 +75,38 @@ export default function ConversationInterface({
 
     checkAuth();
   }, [supabase]);
+
+  const generateNewPrompts = useCallback(
+    async (currentConversation: ConversationTurn[]) => {
+      setIsGeneratingPrompts(true);
+      try {
+        const response = await fetch("/api/generate-prompt", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            conversationHistory: currentConversation.map((turn) => ({
+              speaker: turn.speaker,
+              transcript: turn.transcript,
+            })),
+            riteOfPassage: riteOfPassage,
+          }),
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setCurrentPrompts(data.prompts);
+        } else {
+          console.error("Failed to generate prompts:", data.error);
+        }
+      } catch (error) {
+        console.error("Error calling generate-prompt API:", error);
+      } finally {
+        setIsGeneratingPrompts(false);
+      }
+    },
+    [riteOfPassage]
+  );
 
   // Initialize with starter prompts and session only after authentication
   useEffect(() => {
@@ -167,39 +209,8 @@ export default function ConversationInterface({
     onSessionUpdate,
     isAuthenticated,
     isCheckingAuth,
+    generateNewPrompts,
   ]);
-
-  const generateNewPrompts = useCallback(
-    async (currentConversation: ConversationTurn[]) => {
-      setIsGeneratingPrompts(true);
-      try {
-        const response = await fetch("/api/generate-prompt", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            conversationHistory: currentConversation.map((turn) => ({
-              speaker: turn.speaker,
-              transcript: turn.transcript,
-            })),
-            riteOfPassage: riteOfPassage,
-          }),
-        });
-        const data = await response.json();
-        if (response.ok) {
-          setCurrentPrompts(data.prompts);
-        } else {
-          console.error("Failed to generate prompts:", data.error);
-        }
-      } catch (error) {
-        console.error("Error calling generate-prompt API:", error);
-      } finally {
-        setIsGeneratingPrompts(false);
-      }
-    },
-    [riteOfPassage]
-  );
 
   const handleRecordingComplete = useCallback(
     async (audioBlob: Blob) => {

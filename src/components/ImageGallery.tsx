@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { ArchiveImage } from "@/lib/archiveService";
 
 interface ImageGalleryProps {
@@ -11,7 +12,7 @@ interface ImageGalleryProps {
 
 export default function ImageGallery({
   conversationText,
-  sessionId,
+  sessionId, // eslint-disable-line @typescript-eslint/no-unused-vars
   onImageSelect,
 }: ImageGalleryProps) {
   const [images, setImages] = useState<ArchiveImage[]>([]);
@@ -23,9 +24,9 @@ export default function ImageGallery({
     if (conversationText.trim()) {
       searchImages();
     }
-  }, [conversationText]);
+  }, [conversationText, searchImages]);
 
-  const searchImages = async () => {
+  const searchImages = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -48,7 +49,7 @@ export default function ImageGallery({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [conversationText]);
 
   const handleImageClick = (image: ArchiveImage) => {
     setSelectedImage(image);
@@ -125,21 +126,23 @@ export default function ImageGallery({
             onClick={() => handleImageClick(image)}
           >
             <div className="aspect-square bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
-              <img
+              <Image
                 src={image.url}
                 alt={image.title}
+                width={200}
+                height={200}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                 onError={(e) => {
                   // Fallback for broken images
                   const target = e.target as HTMLImageElement;
                   target.src = `data:image/svg+xml;base64,${btoa(`
-                    <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
-                      <rect width="200" height="200" fill="#f3f4f6"/>
-                      <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="#6b7280" font-family="Arial, sans-serif" font-size="12">
-                        Historical Image
-                      </text>
-                    </svg>
-                  `)}`;
+                        <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+                          <rect width="200" height="200" fill="#f3f4f6"/>
+                          <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="#6b7280" font-family="Arial, sans-serif" font-size="12">
+                            Historical Image
+                          </text>
+                        </svg>
+                      `)}`;
                 }}
               />
             </div>
@@ -172,9 +175,11 @@ export default function ImageGallery({
               </div>
 
               <div className="mb-4">
-                <img
+                <Image
                   src={selectedImage.url}
                   alt={selectedImage.title}
+                  width={800}
+                  height={400}
                   className="w-full h-64 object-cover rounded-lg"
                 />
               </div>

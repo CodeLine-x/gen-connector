@@ -1,3 +1,31 @@
+// Define metadata types for generated content
+export interface ImageMetadata {
+  width?: number;
+  height?: number;
+  format?: string;
+  size?: number;
+  generated_at?: string;
+  model?: string;
+  style?: string;
+  tags?: string[];
+}
+
+export interface VideoMetadata {
+  duration?: number;
+  format?: string;
+  size?: number;
+  resolution?: string;
+  fps?: number;
+  generated_at?: string;
+  slides?: Array<{
+    image_url: string;
+    duration: number;
+    transition: string;
+  }>;
+}
+
+export type GeneratedContentMetadata = ImageMetadata | VideoMetadata;
+
 export interface Database {
   public: {
     Tables: {
@@ -79,7 +107,7 @@ export interface Database {
           url: string;
           prompt: string;
           created_at: string;
-          metadata?: any;
+          metadata?: GeneratedContentMetadata;
         };
         Insert: {
           id?: string;
@@ -88,7 +116,7 @@ export interface Database {
           url: string;
           prompt: string;
           created_at?: string;
-          metadata?: any;
+          metadata?: GeneratedContentMetadata;
         };
         Update: {
           id?: string;
@@ -97,7 +125,7 @@ export interface Database {
           url?: string;
           prompt?: string;
           created_at?: string;
-          metadata?: any;
+          metadata?: GeneratedContentMetadata;
         };
       };
     };

@@ -22,7 +22,7 @@ class SpeakerIdentifier {
   identifySpeaker(
     transcript: string,
     audioFeatures?: AudioFeatures,
-    duration?: number
+    _duration?: number // eslint-disable-line @typescript-eslint/no-unused-vars
   ): SpeakerRole {
     // If this is the first turn, assume young adult starts the conversation
     if (this.conversationHistory.length === 0) {
@@ -151,7 +151,7 @@ export const speakerIdentifier = new SpeakerIdentifier();
 // Standalone function for easy import
 export const identifySpeaker = (
   lastSpeaker: SpeakerRole | null,
-  transcript: string
+  _transcript: string // eslint-disable-line @typescript-eslint/no-unused-vars
 ): SpeakerRole => {
   // Simple alternating logic for PoC
   if (!lastSpeaker) {

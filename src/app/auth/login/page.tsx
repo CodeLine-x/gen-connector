@@ -31,7 +31,7 @@ export default function LoginPage() {
         setMessage("Login successful! Redirecting...");
         window.location.href = "/dashboard";
       }
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred");
     } finally {
       setIsLoading(false);
@@ -53,7 +53,7 @@ export default function LoginPage() {
       if (error) {
         setError(error.message);
       }
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred");
     } finally {
       setIsLoading(false);

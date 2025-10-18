@@ -12,17 +12,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get relevant images based on conversation
-    const images = await archiveService.getRelevantImages(conversationText);
-
     // Extract context for additional metadata
     const context = archiveService.extractContext(conversationText);
+
+    // Generate search query
+    const searchQuery = archiveService.generateSearchQuery(context);
+
+    // Get relevant images based on conversation with optional filters
+    const images = await archiveService.searchArchives(searchQuery, filters);
 
     return NextResponse.json({
       images,
       context,
-      searchQuery: archiveService.generateSearchQuery(context),
+      searchQuery,
       totalResults: images.length,
+      filters: filters || null,
     });
   } catch (error) {
     console.error("Archive search error:", error);

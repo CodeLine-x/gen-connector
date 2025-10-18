@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 interface Conversation {
@@ -11,6 +12,32 @@ interface Conversation {
   transcript: string;
   audio_url?: string;
   timestamp: string;
+}
+
+interface GeneratedImage {
+  id: string;
+  url: string;
+  prompt: string;
+  created_at: string;
+  metadata?: {
+    width?: number;
+    height?: number;
+    format?: string;
+    model?: string;
+  };
+}
+
+interface GeneratedVideo {
+  id: string;
+  url: string;
+  prompt: string;
+  created_at: string;
+  metadata?: {
+    duration?: number;
+    format?: string;
+    resolution?: string;
+    fps?: number;
+  };
 }
 
 interface SessionData {
@@ -27,8 +54,8 @@ interface SessionData {
   keyQuotes: string[];
   emotionalTone: string;
   significance: string;
-  images: any[];
-  videos: any[];
+  images: GeneratedImage[];
+  videos: GeneratedVideo[];
   conversationCount: number;
   elderlyResponses: number;
 }
@@ -265,7 +292,7 @@ export default function SessionDetailPage({
                     key={index}
                     className="text-gray-700 dark:text-gray-300 italic border-l-4 border-blue-500 pl-4"
                   >
-                    "{quote}"
+                    &ldquo;{quote}&rdquo;
                   </blockquote>
                 ))}
               </div>
@@ -321,9 +348,11 @@ export default function SessionDetailPage({
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {sessionData.images.map((image, index) => (
                     <div key={index} className="relative">
-                      <img
+                      <Image
                         src={image.url}
                         alt={`Generated image ${index + 1}`}
+                        width={200}
+                        height={128}
                         className="w-full h-32 object-cover rounded-lg"
                       />
                     </div>

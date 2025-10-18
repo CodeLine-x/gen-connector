@@ -1,4 +1,4 @@
-import { put, list, del } from "@vercel/blob";
+import { list, del } from "@vercel/blob";
 
 export interface StorageFile {
   name: string;
@@ -53,7 +53,7 @@ class StorageService {
   async uploadImage(
     imageUrl: string,
     sessionId: string,
-    prompt: string
+    _prompt: string // eslint-disable-line @typescript-eslint/no-unused-vars
   ): Promise<StorageFile> {
     // Fetch the image from the URL
     const response = await fetch(imageUrl);

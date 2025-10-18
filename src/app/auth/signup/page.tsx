@@ -46,7 +46,7 @@ export default function SignupPage() {
       } else {
         setMessage("Check your email for a confirmation link!");
       }
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred");
     } finally {
       setIsLoading(false);
@@ -68,7 +68,7 @@ export default function SignupPage() {
       if (error) {
         setError(error.message);
       }
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred");
     } finally {
       setIsLoading(false);
