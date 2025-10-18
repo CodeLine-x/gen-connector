@@ -20,7 +20,7 @@ export default function MessageScreen({
   showProgressBar = false,
 }: MessageScreenProps) {
   return (
-    <div className="h-screen w-screen bg-black flex flex-col overflow-hidden">
+    <div className="h-screen w-screen bg-black flex flex-col overflow-y-auto">
       {/* Back Button (conditional) */}
       {showBackButton && onBack && (
         <div className="absolute top-6 left-6 z-10">

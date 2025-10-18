@@ -34,6 +34,15 @@ interface AddMemoryResponse {
   created_at: string;
 }
 
+interface AddMemoryRequest {
+  text: string;
+  metadata?: Record<string, unknown>;
+  user_id?: string;
+  app_id?: string;
+  agent_id?: string;
+  run_id?: string;
+}
+
 class Mem0Service {
   private apiKey: string;
   private baseUrl: string;
@@ -100,12 +109,29 @@ class Mem0Service {
    * Add a new memory
    */
   async addMemory(
-    memory: Omit<Memory, "id" | "created_at" | "updated_at">
+    memory: Omit<Memory, "id" | "created_at" | "updated_at"> & {
+      entityId?: string;
+    }
   ): Promise<AddMemoryResponse> {
+    // Extract entity_id from metadata or direct parameter
+    const entityId = memory.entityId || memory.metadata?.entity_id;
+
+    // Prepare the request body
+    const requestBody = {
+      text: memory.text,
+      metadata: memory.metadata,
+    };
+
+    // Build endpoint with entity filter as query parameter if provided
+    let endpoint = "/v1/memories";
+    if (entityId && typeof entityId === "string") {
+      endpoint += `?user_id=${encodeURIComponent(entityId)}`;
+    }
+
     return this.makeRequest(
-      "/v1/memories",
+      endpoint,
       "POST",
-      memory
+      requestBody
     ) as Promise<AddMemoryResponse>;
   }
 
@@ -139,15 +165,41 @@ class Mem0Service {
       });
     }
 
-    // Add required pagination parameters if no entity filters
-    if (!entityId && !metadata) {
-      params.append("page", "1");
-      params.append("page_size", "50");
-    }
+    // Always add required pagination parameters
+    params.append("page", "1");
+    params.append("page_size", "50");
 
-    return this.makeRequest(`/v1/memories?${params.toString()}`) as Promise<
-      Memory[]
-    >;
+    const response = await this.makeRequest(
+      `/v1/memories?${params.toString()}`
+    );
+
+    // Handle different response formats
+    if (Array.isArray(response)) {
+      return response as Memory[];
+    } else if (
+      response &&
+      typeof response === "object" &&
+      "results" in response
+    ) {
+      // Mem0 API returns { count, next, previous, results }
+      const responseObj = response as {
+        count: number;
+        next: string | null;
+        previous: string | null;
+        results: Memory[];
+      };
+      return Array.isArray(responseObj.results) ? responseObj.results : [];
+    } else if (
+      response &&
+      typeof response === "object" &&
+      "memories" in response
+    ) {
+      const responseObj = response as { memories: Memory[]; total?: number };
+      return Array.isArray(responseObj.memories) ? responseObj.memories : [];
+    } else {
+      console.warn("⚠️ Unexpected response format from Mem0 API:", response);
+      return [];
+    }
   }
 
   /**
@@ -172,21 +224,54 @@ class Mem0Service {
       });
     }
 
-    // Add required pagination parameters if no entity filters
-    if (!params.metadata || !params.metadata.entity_id) {
-      searchParams.append("page", "1");
-      searchParams.append("page_size", String(params.limit || 10));
-    }
+    // Always add required pagination parameters
+    searchParams.append("page", "1");
+    searchParams.append("page_size", String(params.limit || 10));
 
     const endpoint = `/v1/memories?${searchParams.toString()}`;
 
     try {
       // Try to get memories with search parameters
-      const memories = (await this.makeRequest(endpoint, "GET")) as Memory[];
+      const response = await this.makeRequest(endpoint, "GET");
+
+      // Handle different response formats
+      let memories: Memory[] = [];
+
+      if (Array.isArray(response)) {
+        memories = response as Memory[];
+      } else if (
+        response &&
+        typeof response === "object" &&
+        "results" in response
+      ) {
+        // Mem0 API returns { count, next, previous, results }
+        const responseObj = response as {
+          count: number;
+          next: string | null;
+          previous: string | null;
+          results: Memory[];
+        };
+        memories = Array.isArray(responseObj.results)
+          ? responseObj.results
+          : [];
+      } else if (
+        response &&
+        typeof response === "object" &&
+        "memories" in response
+      ) {
+        // If response has a memories property (fallback)
+        const responseObj = response as { memories: Memory[]; total?: number };
+        memories = Array.isArray(responseObj.memories)
+          ? responseObj.memories
+          : [];
+      } else {
+        console.warn("⚠️ Unexpected response format from Mem0 API:", response);
+        memories = [];
+      }
 
       return {
-        memories: memories || [],
-        total: memories?.length || 0,
+        memories,
+        total: memories.length,
       };
     } catch (error) {
       console.log("⚠️ Search with parameters failed, getting all memories");
@@ -196,13 +281,50 @@ class Mem0Service {
       fallbackParams.append("page", "1");
       fallbackParams.append("page_size", "100"); // Get more for filtering
 
-      const allMemories = (await this.makeRequest(
+      const response = await this.makeRequest(
         `/v1/memories?${fallbackParams.toString()}`,
         "GET"
-      )) as Memory[];
+      );
+
+      // Handle different response formats for fallback
+      let allMemories: Memory[] = [];
+
+      if (Array.isArray(response)) {
+        allMemories = response as Memory[];
+      } else if (
+        response &&
+        typeof response === "object" &&
+        "results" in response
+      ) {
+        // Mem0 API returns { count, next, previous, results }
+        const responseObj = response as {
+          count: number;
+          next: string | null;
+          previous: string | null;
+          results: Memory[];
+        };
+        allMemories = Array.isArray(responseObj.results)
+          ? responseObj.results
+          : [];
+      } else if (
+        response &&
+        typeof response === "object" &&
+        "memories" in response
+      ) {
+        const responseObj = response as { memories: Memory[]; total?: number };
+        allMemories = Array.isArray(responseObj.memories)
+          ? responseObj.memories
+          : [];
+      } else {
+        console.warn(
+          "⚠️ Unexpected fallback response format from Mem0 API:",
+          response
+        );
+        allMemories = [];
+      }
 
       // Simple text-based filtering
-      let filteredMemories = allMemories || [];
+      let filteredMemories = allMemories;
 
       if (params.query) {
         const queryLower = params.query.toLowerCase();
@@ -305,4 +427,10 @@ const createMem0Service = (): Mem0Service => {
 };
 
 export { Mem0Service, createMem0Service };
-export type { Memory, SearchParams, SearchResult, AddMemoryResponse };
+export type {
+  Memory,
+  SearchParams,
+  SearchResult,
+  AddMemoryResponse,
+  AddMemoryRequest,
+};

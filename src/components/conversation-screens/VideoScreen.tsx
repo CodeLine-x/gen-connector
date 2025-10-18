@@ -107,7 +107,7 @@ export default function VideoScreen({
   };
 
   return (
-    <div className="h-screen w-screen bg-black flex flex-col overflow-hidden p-6">
+    <div className="h-screen w-screen bg-black flex flex-col overflow-y-auto p-6">
       {/* Title */}
       <div className="text-center mb-6">
         <h1

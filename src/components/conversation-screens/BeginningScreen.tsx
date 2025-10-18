@@ -19,7 +19,7 @@ export default function BeginningScreen({
   const prompts = getInitialPrompts(category);
 
   return (
-    <div className="h-screen w-screen bg-black flex flex-col overflow-hidden">
+    <div className="h-screen w-screen bg-black flex flex-col overflow-y-auto">
       {/* Back Button */}
       <div className="absolute top-6 left-6 z-10">
         <button

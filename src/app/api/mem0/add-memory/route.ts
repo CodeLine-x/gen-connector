@@ -17,9 +17,9 @@ export async function POST(request: NextRequest) {
       text,
       metadata: {
         ...metadata,
-        entity_id: entityId,
         timestamp: new Date().toISOString(),
       },
+      entityId, // Pass entityId separately so it can be used as user_id
     });
 
     console.log("✅ Memory added:", memory.id);

@@ -20,7 +20,7 @@ export default function TitleScreen({
   }, [onComplete]);
 
   return (
-    <div className="h-screen w-screen bg-black flex flex-col items-center justify-center overflow-hidden p-6">
+    <div className="h-screen w-screen bg-black flex flex-col items-center justify-center overflow-y-auto p-6">
       {/* Category Title */}
       <h1
         className="text-white text-center mb-8 md:mb-12"

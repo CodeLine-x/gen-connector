@@ -6,7 +6,7 @@ export default function StartRecordingScreen({
   onStartRecording,
 }: StartRecordingScreenProps) {
   return (
-    <div className="h-screen w-screen bg-black flex flex-col items-center justify-center overflow-hidden">
+    <div className="h-screen w-screen bg-black flex flex-col items-center justify-center overflow-y-auto">
       {/* "Let's talk!" text */}
       <h1
         className="text-white text-center mb-12 md:mb-16"

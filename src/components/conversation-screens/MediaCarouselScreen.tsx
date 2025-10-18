@@ -92,7 +92,7 @@ export default function MediaCarouselScreen({
 
   return (
     <div
-      className="h-screen w-screen bg-black flex flex-col overflow-hidden p-6"
+      className="h-screen w-screen bg-black flex flex-col overflow-y-auto p-6"
       onKeyDown={handleKeyDown}
       tabIndex={0}
     >

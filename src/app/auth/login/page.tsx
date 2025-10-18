@@ -29,7 +29,7 @@ export default function LoginPage() {
         setError(error.message);
       } else {
         setMessage("Login successful! Redirecting...");
-        window.location.href = "/dashboard";
+        window.location.href = "/";
       }
     } catch {
       setError("An unexpected error occurred");
@@ -50,7 +50,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${redirectUrl}/dashboard`,
+          redirectTo: `${redirectUrl}/`,
         },
       });
 

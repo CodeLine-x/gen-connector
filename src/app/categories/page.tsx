@@ -42,7 +42,7 @@ const categories: Category[] = [
 
 export default function Categories() {
   return (
-    <main className="h-screen w-screen bg-black text-white flex items-center justify-center overflow-hidden">
+    <main className="h-screen w-screen bg-black text-white flex items-center justify-center overflow-y-auto">
       {/* Mobile-First Layout - Contained within viewport */}
       <div className="w-full h-full flex flex-col items-center py-6 px-6 md:py-8 md:px-12">
         {/* Header Title */}
@@ -61,7 +61,7 @@ export default function Categories() {
         </h1>
 
         {/* Category Grid - Takes remaining space */}
-        <div className="w-full flex-1 flex items-center justify-center overflow-hidden">
+        <div className="w-full flex-1 flex items-center justify-center overflow-y-auto">
           <div className="w-full max-w-2xl grid grid-cols-2 gap-3 md:gap-4 lg:gap-6 auto-rows-fr">
             {categories.map((category) => (
               <Link

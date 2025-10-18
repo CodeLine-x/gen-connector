@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="h-screen w-screen bg-black text-white flex items-center justify-center overflow-hidden">
+    <main className="h-screen w-screen bg-black text-white flex items-center justify-center overflow-y-auto">
       {/* Mobile-First Layout - Contained within viewport */}
       <div className="w-full h-full flex flex-col items-center justify-between py-4 px-6 md:py-8 md:px-12">
         {/* Top Section: Welcome + Title */}

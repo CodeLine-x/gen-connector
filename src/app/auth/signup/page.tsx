@@ -39,7 +39,7 @@ export default function SignupPage() {
         options: {
           emailRedirectTo: `${
             process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
-          }/dashboard`,
+          }/`,
         },
       });
 
@@ -65,7 +65,7 @@ export default function SignupPage() {
         options: {
           redirectTo: `${
             process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
-          }/dashboard`,
+          }/`,
         },
       });
 

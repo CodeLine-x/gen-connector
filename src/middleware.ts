@@ -37,9 +37,8 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect dashboard and conversation routes
+  // Protect conversation routes
   if (
-    request.nextUrl.pathname.startsWith("/dashboard") ||
     request.nextUrl.pathname.startsWith("/coming-of-age") ||
     request.nextUrl.pathname.startsWith("/birth-childhood") ||
     request.nextUrl.pathname.startsWith("/marriage") ||
@@ -56,7 +55,7 @@ export async function middleware(request: NextRequest) {
   // Redirect authenticated users away from auth pages
   if (request.nextUrl.pathname.startsWith("/auth/") && user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = "/";
     return NextResponse.redirect(url);
   }
 
