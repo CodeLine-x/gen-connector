@@ -9,15 +9,9 @@ export default function Death() {
   const [sessionId, setSessionId] = useState<string>("");
 
   useEffect(() => {
-    // Generate or retrieve session ID from localStorage
-    const storedSessionId = localStorage.getItem("death-session");
-    if (storedSessionId) {
-      setSessionId(storedSessionId);
-    } else {
-      const newSessionId = uuidv4();
-      localStorage.setItem("death-session", newSessionId);
-      setSessionId(newSessionId);
-    }
+    // Always generate a new session ID for a fresh conversation
+    const newSessionId = uuidv4();
+    setSessionId(newSessionId);
   }, []);
 
   if (!sessionId) {

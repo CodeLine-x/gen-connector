@@ -9,15 +9,9 @@ export default function Marriage() {
   const [sessionId, setSessionId] = useState<string>("");
 
   useEffect(() => {
-    // Generate or retrieve session ID from localStorage
-    const storedSessionId = localStorage.getItem("marriage-session");
-    if (storedSessionId) {
-      setSessionId(storedSessionId);
-    } else {
-      const newSessionId = uuidv4();
-      localStorage.setItem("marriage-session", newSessionId);
-      setSessionId(newSessionId);
-    }
+    // Always generate a new session ID for a fresh conversation
+    const newSessionId = uuidv4();
+    setSessionId(newSessionId);
   }, []);
 
   if (!sessionId) {

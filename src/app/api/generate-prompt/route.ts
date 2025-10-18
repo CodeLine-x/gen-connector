@@ -46,7 +46,7 @@ Keep questions conversational and natural, not interview-like.`;
 Generate 2-3 follow-up questions for the young adult to ask. Make them specific to what was just shared and encourage deeper conversation.`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-3.5-turbo", // Using a more accessible model
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -64,17 +64,53 @@ Generate 2-3 follow-up questions for the young adult to ask. Make them specific 
       .filter((line) => line.length > 0 && line.includes("?"))
       .slice(0, 3); // Limit to 3 questions
 
+    // Fallback questions if AI generation fails or returns empty
+    const fallbackQuestions = [
+      "Can you tell me more about that?",
+      "What was that experience like for you?",
+      "How did that make you feel?",
+    ];
+
+    const finalQuestions = questions.length > 0 ? questions : fallbackQuestions;
+
     return NextResponse.json({
-      questions,
+      questions: finalQuestions,
       themes: extractThemes(elderlyResponses),
       originalResponse: generatedText,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Prompt generation error:", error);
-    return NextResponse.json(
-      { error: "Failed to generate prompts" },
-      { status: 500 }
-    );
+
+    // Handle specific OpenAI API errors
+    if (error.code === "model_not_found") {
+      return NextResponse.json(
+        {
+          error: "AI model not available. Please check your OpenAI API access.",
+        },
+        { status: 503 }
+      );
+    }
+
+    if (error.code === "insufficient_quota") {
+      return NextResponse.json(
+        { error: "OpenAI API quota exceeded. Please check your billing." },
+        { status: 402 }
+      );
+    }
+
+    // Return fallback questions even if API fails
+    const fallbackQuestions = [
+      "Can you tell me more about that?",
+      "What was that experience like for you?",
+      "How did that make you feel?",
+    ];
+
+    return NextResponse.json({
+      questions: fallbackQuestions,
+      themes: [],
+      originalResponse: "Fallback questions due to API error",
+      error: "Using fallback questions due to API error",
+    });
   }
 }
 

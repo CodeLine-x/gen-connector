@@ -26,7 +26,14 @@ class StorageService {
     formData.append("path", filePath);
     formData.append("contentType", "audio/webm");
 
-    const response = await fetch("/api/upload", {
+    // Check if we're on the server or client
+    const isServer = typeof window === "undefined";
+    const baseUrl = isServer
+      ? process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+      : "";
+    const uploadUrl = `${baseUrl}/api/upload`;
+
+    const response = await fetch(uploadUrl, {
       method: "POST",
       body: formData,
     });
@@ -106,7 +113,14 @@ class StorageService {
     formData.append("path", filePath);
     formData.append("contentType", "video/mp4");
 
-    const response = await fetch("/api/upload", {
+    // Check if we're on the server or client
+    const isServer = typeof window === "undefined";
+    const baseUrl = isServer
+      ? process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+      : "";
+    const uploadUrl = `${baseUrl}/api/upload`;
+
+    const response = await fetch(uploadUrl, {
       method: "POST",
       body: formData,
     });
@@ -216,20 +230,34 @@ export async function uploadAudio(
     formData.append("path", path);
     formData.append("contentType", "audio/webm");
 
-    const response = await fetch("/api/upload", {
+    // Check if we're on the server (API route) or client
+    const isServer = typeof window === "undefined";
+    const baseUrl = isServer
+      ? process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+      : "";
+    const uploadUrl = `${baseUrl}/api/upload`;
+
+    const response = await fetch(uploadUrl, {
       method: "POST",
       body: formData,
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || "Upload failed");
+      const errorMsg = error.details
+        ? `${error.error}: ${error.details}`
+        : error.error;
+      console.error("Upload API error:", errorMsg);
+      throw new Error(errorMsg || "Upload failed");
     }
 
     const data = await response.json();
+    console.log(`✅ Audio uploaded: ${data.url}`);
     return data.url;
   } catch (error) {
     console.error("Error uploading audio:", error);
-    throw new Error("Failed to upload audio to storage.");
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    throw new Error(`Failed to upload audio: ${errorMessage}`);
   }
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import ConversationInterface from "@/components/ConversationInterface";
+import ImprovedSegmentedConversation from "@/components/ImprovedSegmentedConversation";
 import AuthWrapper from "@/components/AuthWrapper";
 import { v4 as uuidv4 } from "uuid";
 
@@ -10,15 +10,9 @@ export default function ComingOfAge() {
   const [sessionId, setSessionId] = useState<string>("");
 
   useEffect(() => {
-    // Generate or retrieve session ID from localStorage
-    const storedSessionId = localStorage.getItem("coming-of-age-session");
-    if (storedSessionId) {
-      setSessionId(storedSessionId);
-    } else {
-      const newSessionId = uuidv4();
-      localStorage.setItem("coming-of-age-session", newSessionId);
-      setSessionId(newSessionId);
-    }
+    // Always generate a new session ID for a fresh conversation
+    const newSessionId = uuidv4();
+    setSessionId(newSessionId);
   }, []);
 
   if (!sessionId) {
@@ -45,13 +39,25 @@ export default function ComingOfAge() {
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-4">
               Coming of Age
             </h1>
-            <p className="text-gray-600 dark:text-gray-300 text-base sm:text-lg lg:text-xl">
+            <p className="text-gray-600 dark:text-gray-300 text-base sm:text-lg lg:text-xl mb-4">
               Navigate the transition to adulthood through conversation
             </p>
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mb-4">
+              <p className="text-sm text-green-700 dark:text-green-300 mb-2">
+                ✨ <strong>Fresh Conversation</strong> - Each visit starts a new
+                conversation session
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold py-1 px-3 rounded-lg transition-colors duration-200"
+              >
+                🔄 Start Completely Fresh
+              </button>
+            </div>
           </div>
 
           {/* Conversation Interface */}
-          <ConversationInterface
+          <ImprovedSegmentedConversation
             riteOfPassage="coming-of-age"
             sessionId={sessionId}
           />

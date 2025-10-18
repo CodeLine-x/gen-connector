@@ -90,7 +90,7 @@ Format your response as JSON with these fields:
 }`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-3.5-turbo", // Using a more accessible model
       messages: [
         {
           role: "system",
