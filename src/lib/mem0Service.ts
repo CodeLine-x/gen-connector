@@ -67,6 +67,11 @@ class Mem0Service {
       headers["X-Project-ID"] = this.projectId;
     }
 
+    console.log(`🔍 Mem0 API Request: ${method} ${url}`);
+    if (data) {
+      console.log(`📤 Request body:`, JSON.stringify(data, null, 2));
+    }
+
     const response = await fetch(url, {
       method,
       headers,
@@ -74,8 +79,17 @@ class Mem0Service {
     });
 
     if (!response.ok) {
+      // Try to get the error details from the response
+      let errorDetails = "";
+      try {
+        const errorBody = await response.text();
+        errorDetails = ` - ${errorBody}`;
+      } catch (e) {
+        // Ignore if we can't read the error body
+      }
+
       throw new Error(
-        `Mem0 API error: ${response.status} ${response.statusText}`
+        `Mem0 API error: ${response.status} ${response.statusText}${errorDetails}`
       );
     }
 
@@ -89,7 +103,7 @@ class Mem0Service {
     memory: Omit<Memory, "id" | "created_at" | "updated_at">
   ): Promise<AddMemoryResponse> {
     return this.makeRequest(
-      "/v1/memories/",
+      "/v1/memories",
       "POST",
       memory
     ) as Promise<AddMemoryResponse>;
@@ -101,7 +115,7 @@ class Mem0Service {
   async addMemories(
     memories: Omit<Memory, "id" | "created_at" | "updated_at">[]
   ): Promise<AddMemoryResponse[]> {
-    return this.makeRequest("/v1/memories/batch/", "POST", {
+    return this.makeRequest("/v1/memories/batch", "POST", {
       memories,
     }) as Promise<AddMemoryResponse[]>;
   }
@@ -110,11 +124,14 @@ class Mem0Service {
    * Get all memories for a specific entity
    */
   async getMemories(
-    entityId: string,
+    entityId?: string,
     metadata?: Record<string, unknown>
   ): Promise<Memory[]> {
     const params = new URLSearchParams();
-    params.append("entity_id", entityId);
+
+    if (entityId) {
+      params.append("entity_id", entityId);
+    }
 
     if (metadata) {
       Object.entries(metadata).forEach(([key, value]) => {
@@ -122,7 +139,13 @@ class Mem0Service {
       });
     }
 
-    return this.makeRequest(`/v1/memories/?${params.toString()}`) as Promise<
+    // Add required pagination parameters if no entity filters
+    if (!entityId && !metadata) {
+      params.append("page", "1");
+      params.append("page_size", "50");
+    }
+
+    return this.makeRequest(`/v1/memories?${params.toString()}`) as Promise<
       Memory[]
     >;
   }
@@ -131,11 +154,81 @@ class Mem0Service {
    * Search memories using semantic search
    */
   async searchMemories(params: SearchParams): Promise<SearchResult> {
-    return this.makeRequest(
-      "/v1/memories/search/",
-      "POST",
-      params
-    ) as Promise<SearchResult>;
+    // Use the main memories endpoint with search parameters
+    const searchParams = new URLSearchParams();
+
+    // Add search query if provided
+    if (params.query) {
+      searchParams.append("query", params.query);
+    }
+
+    // Add limit
+    searchParams.append("limit", String(params.limit || 10));
+
+    // Add metadata filters if provided
+    if (params.metadata) {
+      Object.entries(params.metadata).forEach(([key, value]) => {
+        searchParams.append(`metadata.${key}`, String(value));
+      });
+    }
+
+    // Add required pagination parameters if no entity filters
+    if (!params.metadata || !params.metadata.entity_id) {
+      searchParams.append("page", "1");
+      searchParams.append("page_size", String(params.limit || 10));
+    }
+
+    const endpoint = `/v1/memories?${searchParams.toString()}`;
+
+    try {
+      // Try to get memories with search parameters
+      const memories = (await this.makeRequest(endpoint, "GET")) as Memory[];
+
+      return {
+        memories: memories || [],
+        total: memories?.length || 0,
+      };
+    } catch (error) {
+      console.log("⚠️ Search with parameters failed, getting all memories");
+
+      // Fallback: Get all memories and filter client-side
+      const fallbackParams = new URLSearchParams();
+      fallbackParams.append("page", "1");
+      fallbackParams.append("page_size", "100"); // Get more for filtering
+
+      const allMemories = (await this.makeRequest(
+        `/v1/memories?${fallbackParams.toString()}`,
+        "GET"
+      )) as Memory[];
+
+      // Simple text-based filtering
+      let filteredMemories = allMemories || [];
+
+      if (params.query) {
+        const queryLower = params.query.toLowerCase();
+        filteredMemories = filteredMemories.filter((memory) =>
+          memory.text.toLowerCase().includes(queryLower)
+        );
+      }
+
+      if (params.metadata) {
+        filteredMemories = filteredMemories.filter((memory) => {
+          if (!memory.metadata) return false;
+          return Object.entries(params.metadata!).every(
+            ([key, value]) => memory.metadata![key] === value
+          );
+        });
+      }
+
+      // Apply limit
+      const limit = params.limit || 10;
+      filteredMemories = filteredMemories.slice(0, limit);
+
+      return {
+        memories: filteredMemories,
+        total: filteredMemories.length,
+      };
+    }
   }
 
   /**
@@ -146,7 +239,7 @@ class Mem0Service {
     updates: Partial<Memory>
   ): Promise<Memory> {
     return this.makeRequest(
-      `/v1/memories/${memoryId}/`,
+      `/v1/memories/${memoryId}`,
       "PUT",
       updates
     ) as Promise<Memory>;
@@ -156,14 +249,14 @@ class Mem0Service {
    * Delete a memory
    */
   async deleteMemory(memoryId: string): Promise<void> {
-    await this.makeRequest(`/v1/memories/${memoryId}/`, "DELETE");
+    await this.makeRequest(`/v1/memories/${memoryId}`, "DELETE");
   }
 
   /**
    * Delete multiple memories
    */
   async deleteMemories(memoryIds: string[]): Promise<void> {
-    await this.makeRequest("/v1/memories/batch/", "DELETE", {
+    await this.makeRequest("/v1/memories/batch", "DELETE", {
       memory_ids: memoryIds,
     });
   }
@@ -172,14 +265,14 @@ class Mem0Service {
    * Get project details
    */
   async getProject(): Promise<unknown> {
-    return this.makeRequest("/v1/projects/");
+    return this.makeRequest("/v1/projects");
   }
 
   /**
    * Create a new project
    */
   async createProject(name: string, description?: string): Promise<unknown> {
-    return this.makeRequest("/v1/projects/", "POST", { name, description });
+    return this.makeRequest("/v1/projects", "POST", { name, description });
   }
 
   /**
@@ -192,7 +285,7 @@ class Mem0Service {
     custom_categories?: Array<{ [key: string]: string }>;
     enable_graph?: boolean;
   }): Promise<unknown> {
-    return this.makeRequest("/v1/projects/", "PUT", updates);
+    return this.makeRequest("/v1/projects", "PUT", updates);
   }
 }
 

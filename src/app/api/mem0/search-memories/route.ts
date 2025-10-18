@@ -13,11 +13,17 @@ export async function POST(request: NextRequest) {
     const mem0 = createMem0Service();
 
     // Search memories with optional entity filtering
-    const results = await mem0.searchMemories({
+    const searchParams: any = {
       query,
-      metadata: entityId ? { entity_id: entityId } : undefined,
       limit,
-    });
+    };
+
+    // Only add metadata if entityId is provided
+    if (entityId) {
+      searchParams.metadata = { entity_id: entityId };
+    }
+
+    const results = await mem0.searchMemories(searchParams);
 
     console.log(`🔍 Found ${results.total} memories for query: "${query}"`);
 

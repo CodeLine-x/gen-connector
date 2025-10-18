@@ -52,7 +52,20 @@ export async function POST(request: NextRequest) {
         memory,
       });
     } else if (action === "search") {
-      // Test searching memories
+      // Test searching memories with simpler parameters
+      const results = await mem0.searchMemories({
+        query: text || "test",
+        limit: 5,
+        // Remove metadata filtering for now to test basic search
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "Memory search successful!",
+        results,
+      });
+    } else if (action === "search-with-metadata") {
+      // Test searching with metadata filtering
       const results = await mem0.searchMemories({
         query: text || "test",
         metadata: {
@@ -63,12 +76,15 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: "Memory search successful!",
+        message: "Memory search with metadata successful!",
         results,
       });
     } else {
       return NextResponse.json(
-        { error: "Invalid action. Use 'add' or 'search'" },
+        {
+          error:
+            "Invalid action. Use 'add', 'search', or 'search-with-metadata'",
+        },
         { status: 400 }
       );
     }
