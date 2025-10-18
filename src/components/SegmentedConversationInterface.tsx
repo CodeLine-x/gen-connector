@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import SpeakerAwareVoiceRecorder from "./SpeakerAwareVoiceRecorder";
 import ImageGallery from "./ImageGallery";
 import { getInitialPrompts, type RiteOfPassage } from "@/lib/promptTemplates";
