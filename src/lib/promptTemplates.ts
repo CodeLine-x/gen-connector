@@ -32,9 +32,9 @@ export const RITE_OF_PASSAGE_PROMPTS = {
 export type RiteOfPassage = keyof typeof RITE_OF_PASSAGE_PROMPTS;
 
 export function getInitialPrompts(riteOfPassage: RiteOfPassage): string[] {
-  return RITE_OF_PASSAGE_PROMPTS[riteOfPassage].slice(0, 3);
+  return [...RITE_OF_PASSAGE_PROMPTS[riteOfPassage].slice(0, 3)];
 }
 
 export function getAllPrompts(riteOfPassage: RiteOfPassage): string[] {
-  return RITE_OF_PASSAGE_PROMPTS[riteOfPassage];
+  return [...RITE_OF_PASSAGE_PROMPTS[riteOfPassage]];
 }

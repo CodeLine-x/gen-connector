@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       url: blob.url,
       pathname: blob.pathname,
       contentType: blob.contentType,
-      size: blob.size,
+      size: file.size, // Use the original file size instead
     });
   } catch (error) {
     console.error("Error uploading file:", error);

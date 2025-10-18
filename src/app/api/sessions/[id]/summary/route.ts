@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     const { id: sessionId } = await params;
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Get session data
     const { data: session, error: sessionError } = await supabase

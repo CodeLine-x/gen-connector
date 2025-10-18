@@ -20,12 +20,6 @@ export default function ImageGallery({
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<ArchiveImage | null>(null);
 
-  useEffect(() => {
-    if (conversationText.trim()) {
-      searchImages();
-    }
-  }, [conversationText, searchImages]);
-
   const searchImages = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -50,6 +44,12 @@ export default function ImageGallery({
       setIsLoading(false);
     }
   }, [conversationText]);
+
+  useEffect(() => {
+    if (conversationText.trim()) {
+      searchImages();
+    }
+  }, [conversationText, searchImages]);
 
   const handleImageClick = (image: ArchiveImage) => {
     setSelectedImage(image);
