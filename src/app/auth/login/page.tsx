@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import EnvironmentDebug from "@/components/EnvironmentDebug";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -47,13 +46,6 @@ export default function LoginPage() {
       // Use environment variable for production, fallback to current origin
       const redirectUrl =
         process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-
-      // Debug logging
-      console.log("Environment variables:", {
-        NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
-        windowOrigin: window.location.origin,
-        finalRedirectUrl: redirectUrl,
-      });
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -199,9 +191,6 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-
-      {/* Debug component - remove after fixing OAuth */}
-      <EnvironmentDebug />
     </div>
   );
 }
