@@ -48,7 +48,9 @@ export default function ConversationInterface({
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        console.error("No authenticated user found");
+        console.error("No authenticated user found - redirecting to login");
+        // Redirect to login page
+        window.location.href = "/auth/login";
         return;
       }
 

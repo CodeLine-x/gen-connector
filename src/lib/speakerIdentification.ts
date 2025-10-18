@@ -147,3 +147,16 @@ class SpeakerIdentifier {
 }
 
 export const speakerIdentifier = new SpeakerIdentifier();
+
+// Standalone function for easy import
+export const identifySpeaker = (
+  lastSpeaker: SpeakerRole | null,
+  transcript: string
+): SpeakerRole => {
+  // Simple alternating logic for PoC
+  if (!lastSpeaker) {
+    // Assume young adult starts the conversation
+    return "young_adult";
+  }
+  return lastSpeaker === "young_adult" ? "elderly" : "young_adult";
+};

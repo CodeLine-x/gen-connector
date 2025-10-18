@@ -218,3 +218,29 @@ class StorageService {
 }
 
 export const storageService = new StorageService();
+
+// Standalone function for easy import
+export async function uploadAudio(
+  audioBlob: Blob,
+  path: string
+): Promise<string> {
+  const supabase = createClient();
+  const { data, error } = await supabase.storage
+    .from("audio-recordings") // You'll need to create this bucket in Supabase
+    .upload(path, audioBlob, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: "audio/webm",
+    });
+
+  if (error) {
+    console.error("Error uploading audio:", error);
+    throw new Error("Failed to upload audio to storage.");
+  }
+
+  const { data: publicUrlData } = supabase.storage
+    .from("audio-recordings")
+    .getPublicUrl(path);
+
+  return publicUrlData.publicUrl;
+}

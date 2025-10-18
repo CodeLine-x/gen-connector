@@ -29,6 +29,12 @@ cp .env.example .env
 3. Copy the key to your `.env`:
    - `OPENAI_API_KEY` - Your OpenAI API key
 
+#### **Google OAuth (Optional - for Google Sign-in)**
+
+1. Follow the detailed guide in `GOOGLE_OAUTH_SETUP.md`
+2. Configure Google OAuth in your Supabase Dashboard
+3. No environment variables needed - configured directly in Supabase
+
 ### 3. Database Setup
 
 Run these SQL commands in your Supabase SQL Editor to create the required tables:

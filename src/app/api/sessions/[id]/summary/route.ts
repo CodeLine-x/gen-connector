@@ -8,10 +8,10 @@ const openai = new OpenAI({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const sessionId = params.id;
+    const { id: sessionId } = await params;
     const supabase = createClient();
 
     // Get session data
