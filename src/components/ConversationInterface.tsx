@@ -34,31 +34,64 @@ export default function ConversationInterface({
   const [currentSpeaker, setCurrentSpeaker] =
     useState<SpeakerRole>("young_adult");
   const [showImageGallery, setShowImageGallery] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [dbError, setDbError] = useState<string | null>(null);
 
   const supabase = createClient();
 
-  // Initialize with starter prompts
+  // Check authentication first
   useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          console.log("No authenticated user found in ConversationInterface");
+          setIsCheckingAuth(false);
+          return;
+        }
+
+        console.log("User authenticated in ConversationInterface:", user.id);
+        setIsAuthenticated(true);
+        setIsCheckingAuth(false);
+      } catch (error) {
+        console.error("Auth check error in ConversationInterface:", error);
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAuth();
+  }, [supabase]);
+
+  // Initialize with starter prompts and session only after authentication
+  useEffect(() => {
+    if (!isAuthenticated || isCheckingAuth) return;
+
     const initialPrompts = getInitialPrompts(riteOfPassage);
     setCurrentPrompts(initialPrompts);
     // Create or load session
     const initializeSession = async () => {
+      console.log("Initializing session for:", sessionId);
       // Get current user
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        console.error("No authenticated user found - redirecting to login");
-        // Redirect to login page
-        window.location.href = "/auth/login";
+        console.error("No authenticated user found in session initialization");
         return;
       }
 
+      console.log("Fetching session with ID:", sessionId);
       const { data, error } = await supabase
         .from("sessions")
         .select("*")
         .eq("id", sessionId)
         .single();
+
+      console.log("Session query result:", { data, error });
 
       if (error && error.code === "PGRST116") {
         // No session found, create a new one
@@ -102,10 +135,39 @@ export default function ConversationInterface({
         }
       } else if (error) {
         console.error("Error fetching session:", error);
+        console.log("Session ID:", sessionId);
+        console.log("User ID:", user.id);
+
+        // Check if it's a table not found error
+        if (
+          error.code === "42P01" ||
+          error.message?.includes("does not exist")
+        ) {
+          setDbError(
+            "Database tables not set up. Please run database-schema.sql in Supabase SQL Editor."
+          );
+        } else if (
+          error.message?.includes("invalid input syntax for type uuid")
+        ) {
+          setDbError(
+            `Database error: ${
+              error.message || "Unknown error"
+            }. This usually means the database tables exist but there's a data type mismatch.`
+          );
+        } else {
+          setDbError(`Database error: ${error.message || "Unknown error"}`);
+        }
       }
     };
     initializeSession();
-  }, [riteOfPassage, sessionId, supabase, onSessionUpdate]);
+  }, [
+    riteOfPassage,
+    sessionId,
+    supabase,
+    onSessionUpdate,
+    isAuthenticated,
+    isCheckingAuth,
+  ]);
 
   const generateNewPrompts = useCallback(
     async (currentConversation: ConversationTurn[]) => {
@@ -214,6 +276,105 @@ export default function ConversationInterface({
     },
     [conversation, generateNewPrompts, sessionId, supabase, currentSpeaker]
   );
+
+  // Show loading state while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="flex flex-col h-full max-h-[90vh] bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 lg:p-10">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">
+              Loading conversation...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="flex flex-col h-full max-h-[90vh] bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 lg:p-10">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <p className="text-gray-600 dark:text-gray-400">
+              Please log in to start a conversation.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show database error if present
+  if (dbError) {
+    return (
+      <div className="flex flex-col h-full max-h-[90vh] bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 lg:p-10">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center max-w-md">
+            <div className="text-red-500 text-5xl mb-4">⚠️</div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              Database Setup Required
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">{dbError}</p>
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-left">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                <strong>To fix this:</strong>
+              </p>
+              <ol className="text-sm text-gray-600 dark:text-gray-400 list-decimal list-inside space-y-2">
+                <li>
+                  Open your{" "}
+                  <a
+                    href="https://supabase.com/dashboard"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    Supabase dashboard
+                  </a>
+                </li>
+                <li>
+                  Go to <strong>SQL Editor</strong>
+                </li>
+                <li>
+                  Copy and paste the contents of{" "}
+                  <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">
+                    database-schema.sql
+                  </code>
+                </li>
+                <li>
+                  Click <strong>Run</strong>
+                </li>
+                <li>
+                  Create storage buckets (see{" "}
+                  <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">
+                    SUPABASE_SETUP.md
+                  </code>
+                  )
+                </li>
+                <li>Refresh this page</li>
+              </ol>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                📖 See{" "}
+                <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">
+                  SUPABASE_SETUP.md
+                </code>{" "}
+                for detailed instructions
+              </p>
+            </div>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-200"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full max-h-[90vh] bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 lg:p-10">

@@ -1,25 +1,66 @@
 # Intergenerational Voice Storytelling System
 
+## 🚀 Quick Start
+
+### Prerequisites
+
+1. Node.js 18+ installed
+2. A Supabase account and project
+3. OpenAI API key
+
+### Setup Steps
+
+1. **Install dependencies:**
+
+   ```bash
+   npm install
+   ```
+
+2. **Set up environment variables:**
+
+   - Copy `.env.example` to `.env`
+   - Fill in your Supabase and OpenAI credentials
+
+3. **Set up database:**
+
+   - Follow the instructions in [`SUPABASE_SETUP.md`](./SUPABASE_SETUP.md)
+   - Run `database-schema.sql` in your Supabase SQL Editor
+
+4. **Run the development server:**
+
+   ```bash
+   npm run dev
+   ```
+
+5. **Open the app:**
+   - Visit `http://localhost:3000`
+   - Sign up or sign in to start
+
+## 📚 Documentation
+
+- **[SUPABASE_SETUP.md](./SUPABASE_SETUP.md)** - Complete Supabase setup guide
+- **[database-schema.sql](./database-schema.sql)** - Database schema
+
+---
+
 ## Phase 1: Foundation & Audio Infrastructure
 
-### 1.1 Dependencies & Environment Setup
+### 1.1 Dependencies & Environment Setup ✅
 
-- Add dependencies: `@supabase/supabase-js`, `openai`, `@supabase/auth-helpers-nextjs`
-- Create `.env.example` with placeholders for:
+- ✅ Add dependencies: `@supabase/supabase-js`, `openai`, `@supabase/ssr`
+- ✅ Create `.env.example` with placeholders for:
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-  - `SUPABASE_SERVICE_ROLE_KEY`
   - `OPENAI_API_KEY`
-  - `NEXT_PUBLIC_APP_URL`
-- Add `.env` to `.gitignore` if not already present
+- ✅ Add `.env` to `.gitignore`
 
-### 1.2 Supabase Configuration
+### 1.2 Supabase Configuration ✅
 
-- Create `/src/lib/supabase/client.ts` - Client-side Supabase instance
-- Create `/src/lib/supabase/server.ts` - Server-side Supabase instance for API routes
-- Set up TypeScript types for database schema in `/src/types/database.ts`
+- ✅ Create `/src/lib/supabase/client.ts` - Client-side Supabase instance
+- ✅ Create `/src/lib/supabase/server.ts` - Server-side Supabase instance for API routes
+- ✅ Set up TypeScript types for database schema in `/src/types/database.ts`
 
-### 1.3 Database Schema Design
+### 1.3 Database Schema Design ✅
 
 Document the required Supabase tables:
 
