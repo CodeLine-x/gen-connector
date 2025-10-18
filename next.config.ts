@@ -1,6 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Increase body size limit for video uploads (default is 10MB)
+  api: {
+    bodyParser: {
+      sizeLimit: "50mb", // Allow up to 50MB for video files
+    },
+  },
+  // For App Router (experimental)
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "50mb",
+    },
+  },
   images: {
     remotePatterns: [
       {

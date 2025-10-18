@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { speakerDiarizationService } from "@/lib/speakerDiarization";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const audioFile = formData.get("audio") as File;
+    const sessionId = formData.get("sessionId") as string;
+    const segmentNumber = parseInt(formData.get("segmentNumber") as string);
 
     if (!audioFile) {
       return NextResponse.json(
         { error: "No audio file provided" },
+        { status: 400 }
+      );
+    }
+
+    if (!sessionId || !segmentNumber) {
+      return NextResponse.json(
+        { error: "Missing sessionId or segmentNumber" },
         { status: 400 }
       );
     }
@@ -34,6 +44,52 @@ export async function POST(request: NextRequest) {
         speakerRoles
       );
 
+    // Save to database
+    const supabase = await createClient();
+
+    // Create segment
+    const startTime = (segmentNumber - 1) * 30;
+    const endTime = segmentNumber * 30;
+
+    const { data: segmentData, error: segmentError } = await supabase
+      .from("segments")
+      .insert({
+        session_id: sessionId,
+        segment_number: segmentNumber,
+        start_time_seconds: startTime,
+        end_time_seconds: endTime,
+        duration_seconds: 30,
+        transcription_status: "completed",
+      })
+      .select()
+      .single();
+
+    if (segmentError) {
+      console.error("Error creating segment:", segmentError);
+    }
+
+    // Create turns if segment was created successfully
+    if (segmentData) {
+      const turnsData = conversationTurns.map((turn, index) => ({
+        segment_id: segmentData.id,
+        session_id: sessionId,
+        speaker: turn.speaker === "elderly" ? "elderly" : "young_adult",
+        speaker_id: turn.speakerId,
+        transcript: turn.text,
+        start_time_seconds: turn.startTime,
+        end_time_seconds: turn.endTime,
+        turn_number: index + 1,
+      }));
+
+      const { error: turnsError } = await supabase
+        .from("turns")
+        .insert(turnsData);
+
+      if (turnsError) {
+        console.error("Error creating turns:", turnsError);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       diarization: diarizationResult,
@@ -44,7 +100,8 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: unknown) {
     console.error("Speaker diarization error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       {
         error: "Failed to analyze speakers",

@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 
+// Increase body size limit for this route (for video uploads)
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: "50mb",
+    },
+  },
+};
+
+// Route segment config for App Router
+export const maxDuration = 60; // Max 60 seconds for upload
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     // Check if Blob token is configured
