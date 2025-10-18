@@ -6,10 +6,14 @@ import { createClient } from "@/lib/supabase/client";
 import { SegmentManager } from "@/lib/segmentManager";
 import { uploadAudio } from "@/lib/storage";
 import type { Segment, Turn } from "@/types/database-v2";
+import GeneratedImageDisplay from "./GeneratedImageDisplay";
 
 interface UISegment extends Segment {
   turns: Turn[];
   isProcessing: boolean;
+  generatedImageUrl?: string;
+  isGeneratingImage?: boolean;
+  imagePrompt?: string;
 }
 
 interface ImprovedSegmentedConversationProps {
@@ -30,6 +34,10 @@ export default function ImprovedSegmentedConversation({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
+  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(
+    null
+  );
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
 
   const MAX_RECORDING_TIME = 300; // 5 minutes in seconds
 
@@ -112,6 +120,101 @@ export default function ImprovedSegmentedConversation({
       console.error("Error generating prompts:", error);
     }
   }, [segments, riteOfPassage]);
+
+  // Generate image for a segment
+  const generateSegmentImage = useCallback(
+    async (segment: Segment, turns: Turn[]) => {
+      try {
+        console.log(
+          `🎨 Generating image for segment ${segment.segment_number}...`
+        );
+
+        // Mark as generating
+        setSegments((prev) =>
+          prev.map((seg) =>
+            seg.id === segment.id ? { ...seg, isGeneratingImage: true } : seg
+          )
+        );
+
+        const response = await fetch("/api/fal/generate-image", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            turns: turns.map((turn) => ({
+              speaker: turn.speaker,
+              transcript: turn.transcript,
+              timestamp: turn.start_time_seconds || 0,
+            })),
+            riteOfPassage: riteOfPassage,
+            segmentNumber: segment.segment_number,
+            sessionId: sessionId, // Pass sessionId for blob storage
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.imageUrl) {
+          console.log(
+            `✅ Image generated for segment ${segment.segment_number}`
+          );
+          console.log(`📍 Image URL:`, data.imageUrl);
+          console.log(`📍 Prompt:`, data.prompt);
+
+          // Update UI with generated image
+          setSegments((prev) => {
+            const updated = prev.map((seg) =>
+              seg.id === segment.id
+                ? {
+                    ...seg,
+                    generatedImageUrl: data.imageUrl,
+                    imagePrompt: data.prompt,
+                    isGeneratingImage: false,
+                  }
+                : seg
+            );
+            console.log(`📍 Updated segments:`, updated);
+            return updated;
+          });
+
+          // Store in database
+          if (segmentManagerRef.current) {
+            const supabase = createClient();
+            await supabase.from("generated_content").insert({
+              session_id: sessionId,
+              segment_id: segment.id,
+              content_type: "image", // Fixed: content_type not type
+              url: data.imageUrl, // Fixed: url not content_url
+              prompt: data.prompt,
+              metadata: {
+                keywords: data.keywords,
+                era: data.era,
+                location: data.location,
+                isPlaceholder: data.isPlaceholder || false,
+                ...data.metadata,
+              },
+            });
+          }
+        } else {
+          throw new Error("Image generation failed");
+        }
+      } catch (error) {
+        console.error(
+          `❌ Error generating image for segment ${segment.segment_number}:`,
+          error
+        );
+
+        // Remove generating state
+        setSegments((prev) =>
+          prev.map((seg) =>
+            seg.id === segment.id ? { ...seg, isGeneratingImage: false } : seg
+          )
+        );
+      }
+    },
+    [sessionId, riteOfPassage]
+  );
 
   // Process segment (30-second snapshot)
   const processSegment = useCallback(
@@ -213,6 +316,9 @@ export default function ImprovedSegmentedConversation({
           );
         }
 
+        // Generate image for this segment (non-blocking)
+        generateSegmentImage(segment, turns);
+
         // Generate new prompts
         await generateNewPrompts();
 
@@ -223,7 +329,7 @@ export default function ImprovedSegmentedConversation({
         console.error("Error processing segment:", error);
       }
     },
-    [sessionId, generateNewPrompts]
+    [sessionId, generateNewPrompts, generateSegmentImage]
   );
 
   // Take 30-second snapshot
@@ -387,18 +493,75 @@ export default function ImprovedSegmentedConversation({
     if (!confirmed) return;
 
     try {
+      console.log("🎬 Starting video generation...");
+      setIsGeneratingVideo(true);
+
+      // Finalize session in database
       if (segmentManagerRef.current) {
         await segmentManagerRef.current.finalizeSession();
       }
 
-      alert(
-        `Session ended successfully!\n\n${segments.length} segments processed.\nVideo generation will be implemented next.`
-      );
+      // Collect all conversation turns
+      const allTurns = segments.flatMap((seg) => seg.turns);
+
+      // Generate video using Fal.ai
+      const videoResponse = await fetch("/api/fal/generate-video", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          turns: allTurns.map((turn) => ({
+            speaker: turn.speaker,
+            transcript: turn.transcript,
+            timestamp: turn.start_time_seconds || 0,
+          })),
+          riteOfPassage: riteOfPassage,
+          sessionId: sessionId,
+        }),
+      });
+
+      const videoData = await videoResponse.json();
+
+      if (videoData.success && videoData.videoUrl) {
+        console.log("✅ Video generated successfully!");
+
+        // Store video in database
+        const supabase = createClient();
+        await supabase.from("generated_content").insert({
+          session_id: sessionId,
+          content_type: "video", // Fixed: content_type not type
+          url: videoData.videoUrl, // Fixed: url not content_url
+          prompt: videoData.prompt,
+          metadata: {
+            keywords: videoData.keywords,
+            era: videoData.era,
+            location: videoData.location,
+            ...videoData.metadata,
+          },
+        });
+
+        // Set video URL to display in UI
+        setGeneratedVideoUrl(videoData.videoUrl);
+        setIsGeneratingVideo(false);
+
+        // Show success notification
+        alert(
+          `✅ Session ended and video generated successfully!\n\n${segments.length} segments processed.\n\nScroll down to see your video!`
+        );
+      } else {
+        throw new Error(videoData.error || "Video generation failed");
+      }
     } catch (error) {
-      console.error("Error ending session:", error);
-      alert("Error ending session. Please try again.");
+      console.error("Error generating video:", error);
+      setIsGeneratingVideo(false);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      alert(
+        `Session ended but video generation failed:\n\n${errorMessage}\n\nYour conversation has been saved.`
+      );
     }
-  }, [segments]);
+  }, [segments, sessionId, riteOfPassage]);
 
   // Calculate stats
   const totalTurns = segments.reduce((sum, s) => sum + s.turns.length, 0);
@@ -504,7 +667,28 @@ export default function ImprovedSegmentedConversation({
                     </p>
                   </div>
                 ) : (
-                  <div className="mt-2 space-y-1">
+                  <div className="mt-2 space-y-3">
+                    {/* Generated Image */}
+                    {segment.isGeneratingImage && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-2"></div>
+                          <p className="text-sm text-blue-700 dark:text-blue-300 italic">
+                            🎨 Generating image...
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {segment.generatedImageUrl && (
+                      <GeneratedImageDisplay
+                        imageUrl={segment.generatedImageUrl}
+                        prompt={segment.imagePrompt}
+                        segmentNumber={segment.segment_number}
+                      />
+                    )}
+
+                    {/* Conversation Turns */}
                     {segment.turns.map((turn) => (
                       <div
                         key={turn.id}
@@ -633,6 +817,61 @@ export default function ImprovedSegmentedConversation({
           >
             🎬 End Session & Generate Video
           </button>
+        </div>
+      )}
+
+      {/* Video Generation Loading */}
+      {isGeneratingVideo && (
+        <div className="mb-6 p-6 bg-purple-50 dark:bg-purple-900/20 rounded-lg border-2 border-purple-500 dark:border-purple-400">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mr-3"></div>
+            <div>
+              <p className="text-lg font-semibold text-purple-900 dark:text-purple-100">
+                🎬 Generating Your 10-Second Memory Video...
+              </p>
+              <p className="text-sm text-purple-700 dark:text-purple-300">
+                This may take 60-90 seconds. Please wait...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Generated Video Display */}
+      {generatedVideoUrl && (
+        <div className="mb-6 p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border-2 border-purple-300 dark:border-purple-600">
+          <h3 className="text-xl font-bold text-purple-900 dark:text-purple-100 mb-3 flex items-center">
+            <span className="mr-2">🎬</span>
+            Your Memory Video
+          </h3>
+          <div className="bg-black rounded-lg overflow-hidden">
+            <video
+              controls
+              className="w-full h-auto"
+              src={generatedVideoUrl}
+              poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'%3E%3Crect fill='%23111' width='1920' height='1080'/%3E%3C/svg%3E"
+            >
+              <source src={generatedVideoUrl} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+          <div className="mt-3 flex gap-2">
+            <a
+              href={generatedVideoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-center font-medium transition-colors"
+            >
+              📺 Open in New Tab
+            </a>
+            <a
+              href={generatedVideoUrl}
+              download="memory-video.mp4"
+              className="flex-1 px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg text-center font-medium transition-colors"
+            >
+              💾 Download Video
+            </a>
+          </div>
         </div>
       )}
 
