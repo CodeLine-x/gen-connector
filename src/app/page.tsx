@@ -11,12 +11,23 @@ export default function Home() {
           <p className="text-gray-600 dark:text-gray-300 mb-6 sm:mb-8 text-base sm:text-lg lg:text-xl">
             Ready to begin your journey?
           </p>
-          <Link
-            href="/categories"
-            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 sm:py-4 sm:px-8 lg:py-5 lg:px-10 rounded-xl text-base sm:text-lg lg:text-xl transition-colors duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
-          >
-            Begin
-          </Link>
+          <div className="space-y-4">
+            <Link
+              href="/auth/login"
+              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 sm:py-4 sm:px-8 lg:py-5 lg:px-10 rounded-xl text-base sm:text-lg lg:text-xl transition-colors duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 w-full"
+            >
+              Sign In to Begin
+            </Link>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Don&apos;t have an account?{" "}
+              <Link
+                href="/auth/signup"
+                className="text-blue-600 hover:text-blue-500 font-medium"
+              >
+                Sign up here
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
