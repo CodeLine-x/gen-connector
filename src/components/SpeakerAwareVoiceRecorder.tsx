@@ -30,6 +30,39 @@ export default function SpeakerAwareVoiceRecorder({
   const audioChunksRef = useRef<Blob[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Define processCompleteConversation first so it can be used in startRecording
+  const processCompleteConversation = useCallback(
+    async (audioBlob: Blob) => {
+      setIsProcessing(true);
+      setError(null);
+
+      try {
+        const formData = new FormData();
+        formData.append("audio", audioBlob, "conversation.webm");
+
+        const response = await fetch("/api/diarize-speakers", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          console.log("Speaker diarization completed:", data);
+          onConversationComplete(data.conversationTurns);
+        } else {
+          throw new Error(data.error || "Failed to analyze speakers");
+        }
+      } catch (err) {
+        console.error("Error processing conversation:", err);
+        setError("Failed to analyze speakers. Please try again.");
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [onConversationComplete]
+  );
+
   const startRecording = useCallback(async () => {
     if (disabled) return;
 
@@ -69,7 +102,7 @@ export default function SpeakerAwareVoiceRecorder({
       console.error("Error accessing microphone:", err);
       setError("Please allow microphone access to record.");
     }
-  }, [disabled, onRecordingStart]);
+  }, [disabled, onRecordingStart, processCompleteConversation]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
@@ -79,38 +112,6 @@ export default function SpeakerAwareVoiceRecorder({
       onRecordingStop?.();
     }
   }, [isRecording, onRecordingStop]);
-
-  const processCompleteConversation = useCallback(
-    async (audioBlob: Blob) => {
-      setIsProcessing(true);
-      setError(null);
-
-      try {
-        const formData = new FormData();
-        formData.append("audio", audioBlob, "conversation.webm");
-
-        const response = await fetch("/api/diarize-speakers", {
-          method: "POST",
-          body: formData,
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          console.log("Speaker diarization completed:", data);
-          onConversationComplete(data.conversationTurns);
-        } else {
-          throw new Error(data.error || "Failed to analyze speakers");
-        }
-      } catch (err) {
-        console.error("Error processing conversation:", err);
-        setError("Failed to analyze speakers. Please try again.");
-      } finally {
-        setIsProcessing(false);
-      }
-    },
-    [onConversationComplete]
-  );
 
   // Cleanup on unmount
   useEffect(() => {
@@ -174,7 +175,8 @@ export default function SpeakerAwareVoiceRecorder({
           <p>Analyzing who said what based on voice characteristics...</p>
         ) : (
           <p>
-            Click "Start Recording" to begin a complete conversation session.
+            Click &quot;Start Recording&quot; to begin a complete conversation
+            session.
           </p>
         )}
       </div>

@@ -15,16 +15,21 @@ interface ConversationTurn {
   confidence: number;
 }
 
+interface SessionData {
+  id: string;
+  turns: number;
+  duration: number;
+}
+
 interface DiarizedConversationInterfaceProps {
   riteOfPassage: RiteOfPassage;
   sessionId: string;
-  onSessionUpdate?: (sessionData: any) => void;
+  onSessionUpdate?: (sessionData: SessionData) => void;
 }
 
 export default function DiarizedConversationInterface({
   riteOfPassage,
   sessionId,
-  onSessionUpdate,
 }: DiarizedConversationInterfaceProps) {
   const [conversation, setConversation] = useState<ConversationTurn[]>([]);
   const [currentPrompts, setCurrentPrompts] = useState<string[]>([]);
@@ -359,8 +364,8 @@ export default function DiarizedConversationInterface({
       <div className="flex-1 overflow-y-auto mb-6 p-2 sm:p-4 bg-gray-50 dark:bg-gray-700 rounded-lg custom-scrollbar">
         {conversation.length === 0 && (
           <p className="text-center text-gray-500 dark:text-gray-400 italic">
-            Start the conversation by clicking "Start Recording". Both speakers
-            can talk naturally.
+            Start the conversation by clicking &quot;Start Recording&quot;. Both
+            speakers can talk naturally.
           </p>
         )}
 

@@ -63,7 +63,11 @@ export default function ImprovedSegmentedConversation({
         const { error: sessionError } = await supabase.from("sessions").upsert({
           id: sessionId,
           user_id: user.id,
-          rite_of_passage: riteOfPassage.replace(/-/g, "_") as any,
+          rite_of_passage: riteOfPassage.replace(/-/g, "_") as
+            | "birth_and_childhood"
+            | "coming_of_age"
+            | "marriage"
+            | "death",
           status: "active",
         });
 
@@ -182,7 +186,7 @@ export default function ImprovedSegmentedConversation({
         console.error("Error processing segment:", error);
       }
     },
-    [sessionId]
+    [sessionId, generateNewPrompts]
   );
 
   // Take 30-second snapshot
@@ -300,7 +304,7 @@ export default function ImprovedSegmentedConversation({
       console.error("Error starting recording:", error);
       alert("Please allow microphone access to record.");
     }
-  }, [sessionId, processSegment, takeSnapshot]);
+  }, [sessionId, processSegment, takeSnapshot, stopRecording]);
 
   // Stop recording
   const stopRecording = useCallback(() => {
@@ -471,7 +475,7 @@ export default function ImprovedSegmentedConversation({
             Recorded Segments:
           </h3>
           <div className="space-y-4">
-            {segments.map((segment, index) => (
+            {segments.map((segment) => (
               <div
                 key={segment.id}
                 className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm"
@@ -494,7 +498,7 @@ export default function ImprovedSegmentedConversation({
                   </div>
                 ) : (
                   <div className="mt-2 space-y-1">
-                    {segment.turns.map((turn, turnIndex) => (
+                    {segment.turns.map((turn) => (
                       <div
                         key={turn.id}
                         className={`text-sm ${

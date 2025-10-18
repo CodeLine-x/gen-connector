@@ -4,7 +4,7 @@
 // =====================================================
 
 import { createClient } from "@/lib/supabase/client";
-import type { Segment, Turn, Action } from "@/types/database-v2";
+import type { Segment, Turn } from "@/types/database-v2";
 
 export interface GlobalContext {
   sessionId: string;
@@ -59,10 +59,14 @@ export interface ImageGenerationAction {
   segmentNumbers: number[];
 }
 
+export interface ArtifactMetadata {
+  [key: string]: unknown;
+}
+
 export interface ExecutionResults {
-  songs: Array<{ url: string; metadata: any }>;
-  archiveImages: Array<{ url: string; metadata: any }>;
-  generatedImages: Array<{ url: string; metadata: any }>;
+  songs: Array<{ url: string; metadata: ArtifactMetadata }>;
+  archiveImages: Array<{ url: string; metadata: ArtifactMetadata }>;
+  generatedImages: Array<{ url: string; metadata: ArtifactMetadata }>;
   videoUrl?: string;
 }
 
@@ -315,7 +319,7 @@ export class SessionAIOrchestrator {
    */
   private async executeSongSearches(
     songActions: SongAction[]
-  ): Promise<Array<{ url: string; metadata: any }>> {
+  ): Promise<Array<{ url: string; metadata: ArtifactMetadata }>> {
     // Placeholder - will implement Spotify/YouTube integration
     console.log(`🎵 Executing ${songActions.length} song searches...`);
     return [];
@@ -326,7 +330,7 @@ export class SessionAIOrchestrator {
    */
   private async executeImageSearches(
     imageActions: ImageSearchAction[]
-  ): Promise<Array<{ url: string; metadata: any }>> {
+  ): Promise<Array<{ url: string; metadata: ArtifactMetadata }>> {
     console.log(
       `🖼️ Executing ${imageActions.length} archive image searches...`
     );
@@ -367,7 +371,7 @@ export class SessionAIOrchestrator {
    */
   private async generateImages(
     imageActions: ImageGenerationAction[]
-  ): Promise<Array<{ url: string; metadata: any }>> {
+  ): Promise<Array<{ url: string; metadata: ArtifactMetadata }>> {
     console.log(`🎨 Generating ${imageActions.length} images...`);
 
     const results = await Promise.all(

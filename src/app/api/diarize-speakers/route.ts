@@ -42,12 +42,13 @@ export async function POST(request: NextRequest) {
       speakers: diarizationResult.speakers,
       totalDuration: diarizationResult.totalDuration,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Speaker diarization error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       {
         error: "Failed to analyze speakers",
-        details: error.message,
+        details: errorMessage,
       },
       { status: 500 }
     );

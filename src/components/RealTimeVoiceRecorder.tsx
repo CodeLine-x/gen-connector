@@ -142,8 +142,8 @@ export default function RealTimeVoiceRecorder({
           Speech Recognition Not Supported
         </h3>
         <p className="text-red-600 dark:text-red-300 text-center">
-          Your browser doesn't support speech recognition. Please use Chrome,
-          Edge, or Safari.
+          Your browser doesn&apos;t support speech recognition. Please use
+          Chrome, Edge, or Safari.
         </p>
       </div>
     );
@@ -214,7 +214,10 @@ export default function RealTimeVoiceRecorder({
         {isRecording ? (
           <p>Speak naturally. Your speech will be transcribed in real-time.</p>
         ) : (
-          <p>Click "Start Recording" to begin seamless voice conversation.</p>
+          <p>
+            Click &quot;Start Recording&quot; to begin seamless voice
+            conversation.
+          </p>
         )}
       </div>
     </div>

@@ -10,7 +10,6 @@ import {
   conversationSessionManager,
   type ConversationTurn,
 } from "@/lib/conversationSession";
-import { v4 as uuidv4 } from "uuid";
 
 interface SessionData {
   id: string;
@@ -201,6 +200,7 @@ export default function EnhancedConversationInterface({
     onSessionUpdate,
     isAuthenticated,
     isCheckingAuth,
+    generateNewPrompts,
   ]);
 
   // Update session stats
@@ -339,7 +339,14 @@ export default function EnhancedConversationInterface({
         }
       }
     },
-    [conversation, sessionId, supabase, generateNewPrompts]
+    [
+      conversation,
+      sessionId,
+      supabase,
+      generateNewPrompts,
+      offlineMode,
+      saveToLocalStorage,
+    ]
   );
 
   const handleRecordingStart = useCallback(() => {
@@ -496,7 +503,7 @@ export default function EnhancedConversationInterface({
       <div className="flex-1 overflow-y-auto mb-6 p-2 sm:p-4 bg-gray-50 dark:bg-gray-700 rounded-lg custom-scrollbar">
         {conversation.length === 0 && !liveTranscript && (
           <p className="text-center text-gray-500 dark:text-gray-400 italic">
-            Start the conversation by clicking "Start Recording".
+            Start the conversation by clicking &quot;Start Recording&quot;.
           </p>
         )}
 

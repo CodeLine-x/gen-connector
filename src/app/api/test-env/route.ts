@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const assemblyApiKey = process.env.ASSEMBLYAI_API_KEY;
     const openaiApiKey = process.env.OPENAI_API_KEY;
@@ -16,13 +16,14 @@ export async function GET(request: NextRequest) {
       },
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Environment test error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       {
         success: false,
         error: "Failed to test environment",
-        details: error.message,
+        details: errorMessage,
       },
       { status: 500 }
     );

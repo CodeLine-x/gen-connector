@@ -22,16 +22,21 @@ interface ConversationSegment {
   endTime: number;
 }
 
+interface SessionData {
+  id: string;
+  turns: number;
+  duration: number;
+}
+
 interface SegmentedConversationInterfaceProps {
   riteOfPassage: RiteOfPassage;
   sessionId: string;
-  onSessionUpdate?: (sessionData: any) => void;
+  onSessionUpdate?: (sessionData: SessionData) => void;
 }
 
 export default function SegmentedConversationInterface({
   riteOfPassage,
   sessionId,
-  onSessionUpdate,
 }: SegmentedConversationInterfaceProps) {
   const [segments, setSegments] = useState<ConversationSegment[]>([]);
   const [currentSegment, setCurrentSegment] =
@@ -46,7 +51,7 @@ export default function SegmentedConversationInterface({
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   const supabase = createClient();
-  const recorderRef = useRef<any>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
 
   // Check authentication
   useCallback(async () => {
@@ -145,7 +150,14 @@ export default function SegmentedConversationInterface({
         setIsProcessing(false);
       }
     },
-    [currentSegment, segments, sessionId, supabase, isAuthenticated]
+    [
+      currentSegment,
+      segments,
+      sessionId,
+      supabase,
+      isAuthenticated,
+      generateNewPrompts,
+    ]
   );
 
   const generateNewPrompts = useCallback(

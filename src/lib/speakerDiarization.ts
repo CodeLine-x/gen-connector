@@ -1,5 +1,3 @@
-import { uploadAudio } from "@/lib/storage";
-
 export interface SpeakerSegment {
   speaker: string;
   text: string;
@@ -78,12 +76,22 @@ class SpeakerDiarizationService {
    * ElevenLabs returns words array with individual words and spacing
    * We need to compile these into readable segments grouped by speaker
    */
-  private processDiarizationResult(result: any): DiarizationResult {
+  private processDiarizationResult(result: {
+    words?: Array<{
+      text: string;
+      start: number;
+      end: number;
+      type: string;
+      speaker_id?: string;
+      confidence?: number;
+    }>;
+    duration?: number;
+  }): DiarizationResult {
     const segments: SpeakerSegment[] = [];
     const speakers = new Set<string>();
 
     // Check for 'words' array (ElevenLabs actual response format)
-    const wordsArray = result.words || result.tokens;
+    const wordsArray = result.words;
 
     if (!wordsArray || !Array.isArray(wordsArray)) {
       console.warn("No words/tokens array found in result:", result);
@@ -106,66 +114,79 @@ class SpeakerDiarizationService {
     let currentConfidence = 0;
     let wordCount = 0;
 
-    wordsArray.forEach((token: any, index: number) => {
-      const speakerId = token.speaker_id || "unknown";
-      speakers.add(speakerId);
+    wordsArray.forEach(
+      (
+        token: {
+          text: string;
+          start: number;
+          end: number;
+          type: string;
+          speaker_id?: string;
+          confidence?: number;
+          logprob?: number;
+        },
+        index: number
+      ) => {
+        const speakerId = token.speaker_id || "unknown";
+        speakers.add(speakerId);
 
-      // Skip spacing tokens for compilation, but use them to track timing
-      if (token.type === "spacing") {
-        if (currentText) {
-          currentText += token.text; // Preserve spaces in text
+        // Skip spacing tokens for compilation, but use them to track timing
+        if (token.type === "spacing") {
+          if (currentText) {
+            currentText += token.text; // Preserve spaces in text
+          }
+          return;
         }
-        return;
-      }
 
-      // If speaker changes, save the current segment
-      if (currentSpeaker && currentSpeaker !== speakerId) {
-        if (currentText.trim()) {
+        // If speaker changes, save the current segment
+        if (currentSpeaker && currentSpeaker !== speakerId) {
+          if (currentText.trim()) {
+            segments.push({
+              speaker: currentSpeaker,
+              text: currentText.trim(),
+              startTime: currentStartTime,
+              endTime: currentEndTime,
+              confidence: wordCount > 0 ? currentConfidence / wordCount : 0.5,
+            });
+            console.log(
+              `Segment created: ${currentSpeaker} - "${currentText.trim()}"`
+            );
+          }
+
+          // Reset for new speaker
+          currentSpeaker = speakerId;
+          currentText = token.text;
+          currentStartTime = token.start || 0;
+          currentEndTime = token.end || 0;
+          currentConfidence = token.logprob || 0;
+          wordCount = 1;
+        } else {
+          // Continue building current segment
+          if (!currentSpeaker) {
+            currentSpeaker = speakerId;
+            currentStartTime = token.start || 0;
+          }
+          currentText += token.text;
+          currentEndTime = token.end || 0;
+          currentConfidence += token.logprob || 0;
+          wordCount++;
+        }
+
+        // Handle last word - push final segment
+        if (index === wordsArray.length - 1 && currentText.trim()) {
           segments.push({
-            speaker: currentSpeaker,
+            speaker: currentSpeaker!,
             text: currentText.trim(),
             startTime: currentStartTime,
             endTime: currentEndTime,
             confidence: wordCount > 0 ? currentConfidence / wordCount : 0.5,
           });
           console.log(
-            `Segment created: ${currentSpeaker} - "${currentText.trim()}"`
+            `Final segment created: ${currentSpeaker} - "${currentText.trim()}"`
           );
         }
-
-        // Reset for new speaker
-        currentSpeaker = speakerId;
-        currentText = token.text;
-        currentStartTime = token.start || 0;
-        currentEndTime = token.end || 0;
-        currentConfidence = token.logprob || 0;
-        wordCount = 1;
-      } else {
-        // Continue building current segment
-        if (!currentSpeaker) {
-          currentSpeaker = speakerId;
-          currentStartTime = token.start || 0;
-        }
-        currentText += token.text;
-        currentEndTime = token.end || 0;
-        currentConfidence += token.logprob || 0;
-        wordCount++;
       }
-
-      // Handle last word - push final segment
-      if (index === wordsArray.length - 1 && currentText.trim()) {
-        segments.push({
-          speaker: currentSpeaker!,
-          text: currentText.trim(),
-          startTime: currentStartTime,
-          endTime: currentEndTime,
-          confidence: wordCount > 0 ? currentConfidence / wordCount : 0.5,
-        });
-        console.log(
-          `Final segment created: ${currentSpeaker} - "${currentText.trim()}"`
-        );
-      }
-    });
+    );
 
     console.log(
       `✅ Processed ${segments.length} segments from ${wordsArray.length} words`
@@ -217,12 +238,6 @@ class SpeakerDiarizationService {
     // Young adult typically: shorter segments, questions, less confident
     const sortedByDuration = speakerAnalysis.sort(
       (a, b) => b.totalDuration - a.totalDuration
-    );
-    const sortedByConfidence = speakerAnalysis.sort(
-      (a, b) => b.avgConfidence - a.avgConfidence
-    );
-    const sortedBySegmentLength = speakerAnalysis.sort(
-      (a, b) => b.avgSegmentLength - a.avgSegmentLength
     );
 
     // Heuristic: Speaker with longest total duration and longest segments is likely elderly

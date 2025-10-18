@@ -78,7 +78,7 @@ Generate 2-3 follow-up questions for the young adult to ask. Make them specific 
       themes: extractThemes(elderlyResponses),
       originalResponse: generatedText,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Prompt generation error:", error);
 
     // Handle specific OpenAI API errors
