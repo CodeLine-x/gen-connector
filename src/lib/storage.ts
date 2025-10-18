@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/client";
+import { put, list, del } from "@vercel/blob";
 
 export interface StorageFile {
   name: string;
@@ -9,10 +9,8 @@ export interface StorageFile {
 }
 
 class StorageService {
-  private supabase = createClient();
-
   /**
-   * Upload audio file to Supabase Storage
+   * Upload audio file to Vercel Blob (via API route for client-side compatibility)
    */
   async uploadAudio(
     file: Blob,
@@ -22,24 +20,27 @@ class StorageService {
     const fileName = filename || `audio-${Date.now()}.webm`;
     const filePath = `audio-recordings/${sessionId}/${fileName}`;
 
-    const { data, error } = await this.supabase.storage
-      .from("audio-recordings")
-      .upload(filePath, file, {
-        contentType: "audio/webm",
-        upsert: false,
-      });
+    // Use API route for client-side uploads
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("path", filePath);
+    formData.append("contentType", "audio/webm");
 
-    if (error) {
-      throw new Error(`Failed to upload audio: ${error.message}`);
+    const response = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Upload failed");
     }
 
-    const { data: urlData } = this.supabase.storage
-      .from("audio-recordings")
-      .getPublicUrl(filePath);
+    const data = await response.json();
 
     return {
       name: fileName,
-      url: urlData.publicUrl,
+      url: data.url,
       size: file.size,
       type: "audio/webm",
       uploadedAt: new Date().toISOString(),
@@ -47,7 +48,7 @@ class StorageService {
   }
 
   /**
-   * Upload generated image to Supabase Storage
+   * Upload generated image to Vercel Blob (via API route for client-side compatibility)
    */
   async uploadImage(
     imageUrl: string,
@@ -61,24 +62,27 @@ class StorageService {
     const fileName = `image-${Date.now()}.png`;
     const filePath = `generated-images/${sessionId}/${fileName}`;
 
-    const { data, error } = await this.supabase.storage
-      .from("generated-images")
-      .upload(filePath, imageBlob, {
-        contentType: "image/png",
-        upsert: false,
-      });
+    // Use API route for client-side uploads
+    const formData = new FormData();
+    formData.append("file", imageBlob);
+    formData.append("path", filePath);
+    formData.append("contentType", "image/png");
 
-    if (error) {
-      throw new Error(`Failed to upload image: ${error.message}`);
+    const uploadResponse = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!uploadResponse.ok) {
+      const error = await uploadResponse.json();
+      throw new Error(error.error || "Upload failed");
     }
 
-    const { data: urlData } = this.supabase.storage
-      .from("generated-images")
-      .getPublicUrl(filePath);
+    const data = await uploadResponse.json();
 
     return {
       name: fileName,
-      url: urlData.publicUrl,
+      url: data.url,
       size: imageBlob.size,
       type: "image/png",
       uploadedAt: new Date().toISOString(),
@@ -86,7 +90,7 @@ class StorageService {
   }
 
   /**
-   * Upload video file to Supabase Storage
+   * Upload video file to Vercel Blob (via API route for client-side compatibility)
    */
   async uploadVideo(
     videoBlob: Blob,
@@ -96,24 +100,27 @@ class StorageService {
     const fileName = filename || `video-${Date.now()}.mp4`;
     const filePath = `generated-videos/${sessionId}/${fileName}`;
 
-    const { data, error } = await this.supabase.storage
-      .from("generated-videos")
-      .upload(filePath, videoBlob, {
-        contentType: "video/mp4",
-        upsert: false,
-      });
+    // Use API route for client-side uploads
+    const formData = new FormData();
+    formData.append("file", videoBlob);
+    formData.append("path", filePath);
+    formData.append("contentType", "video/mp4");
 
-    if (error) {
-      throw new Error(`Failed to upload video: ${error.message}`);
+    const response = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Upload failed");
     }
 
-    const { data: urlData } = this.supabase.storage
-      .from("generated-videos")
-      .getPublicUrl(filePath);
+    const data = await response.json();
 
     return {
       name: fileName,
-      url: urlData.publicUrl,
+      url: data.url,
       size: videoBlob.size,
       type: "video/mp4",
       uploadedAt: new Date().toISOString(),
@@ -129,9 +136,9 @@ class StorageService {
     videos: StorageFile[];
   }> {
     const [audioFiles, imageFiles, videoFiles] = await Promise.all([
-      this.getFilesFromBucket("audio-recordings", sessionId),
-      this.getFilesFromBucket("generated-images", sessionId),
-      this.getFilesFromBucket("generated-videos", sessionId),
+      this.getFilesFromPrefix(`audio-recordings/${sessionId}`),
+      this.getFilesFromPrefix(`generated-images/${sessionId}`),
+      this.getFilesFromPrefix(`generated-videos/${sessionId}`),
     ]);
 
     return {
@@ -144,103 +151,85 @@ class StorageService {
   /**
    * Delete a file from storage
    */
-  async deleteFile(bucket: string, filePath: string): Promise<void> {
-    const { error } = await this.supabase.storage
-      .from(bucket)
-      .remove([filePath]);
-
-    if (error) {
-      throw new Error(`Failed to delete file: ${error.message}`);
-    }
+  async deleteFile(url: string): Promise<void> {
+    await del(url);
   }
 
   /**
-   * Get files from a specific bucket and session
+   * Get files from a specific prefix
    */
-  private async getFilesFromBucket(
-    bucket: string,
-    sessionId: string
-  ): Promise<StorageFile[]> {
-    const { data, error } = await this.supabase.storage
-      .from(bucket)
-      .list(sessionId);
+  private async getFilesFromPrefix(prefix: string): Promise<StorageFile[]> {
+    try {
+      const { blobs } = await list({ prefix });
 
-    if (error) {
-      console.error(`Error listing files from ${bucket}:`, error);
+      return blobs.map((blob) => ({
+        name: blob.pathname.split("/").pop() || "",
+        url: blob.url,
+        size: blob.size,
+        type: this.getContentType(blob.pathname),
+        uploadedAt: blob.uploadedAt.toISOString(),
+      }));
+    } catch (error) {
+      console.error(`Error listing files from ${prefix}:`, error);
       return [];
     }
-
-    return data.map((file) => ({
-      name: file.name,
-      url: "", // Will be populated with public URL if needed
-      size: file.metadata?.size || 0,
-      type: file.metadata?.mimetype || "unknown",
-      uploadedAt: file.created_at,
-    }));
   }
 
   /**
-   * Create storage buckets if they don't exist
+   * Get content type from file path
    */
-  async initializeBuckets(): Promise<void> {
-    const buckets = [
-      "audio-recordings",
-      "generated-images",
-      "generated-videos",
-      "archive-images",
-    ];
-
-    for (const bucket of buckets) {
-      const { data, error } = await this.supabase.storage.getBucket(bucket);
-
-      if (error && error.message.includes("not found")) {
-        // Create bucket if it doesn't exist
-        const { error: createError } = await this.supabase.storage.createBucket(
-          bucket,
-          {
-            public: true,
-            allowedMimeTypes:
-              bucket === "audio-recordings"
-                ? ["audio/webm", "audio/mp3", "audio/wav"]
-                : bucket === "generated-images" || bucket === "archive-images"
-                ? ["image/png", "image/jpeg", "image/webp"]
-                : ["video/mp4", "video/webm"],
-            fileSizeLimit: 50 * 1024 * 1024, // 50MB limit
-          }
-        );
-
-        if (createError) {
-          console.error(`Failed to create bucket ${bucket}:`, createError);
-        }
-      }
+  private getContentType(pathname: string): string {
+    const ext = pathname.split(".").pop()?.toLowerCase();
+    switch (ext) {
+      case "webm":
+        return "audio/webm";
+      case "mp3":
+        return "audio/mp3";
+      case "wav":
+        return "audio/wav";
+      case "png":
+        return "image/png";
+      case "jpg":
+      case "jpeg":
+        return "image/jpeg";
+      case "webp":
+        return "image/webp";
+      case "mp4":
+        return "video/mp4";
+      default:
+        return "application/octet-stream";
     }
   }
 }
 
 export const storageService = new StorageService();
 
-// Standalone function for easy import
+// Standalone function for easy import (uses API route for client-side uploads)
 export async function uploadAudio(
   audioBlob: Blob,
   path: string
 ): Promise<string> {
-  const supabase = createClient();
-  const { data, error } = await supabase.storage
-    .from("audio-recordings") // You'll need to create this bucket in Supabase
-    .upload(path, audioBlob, {
-      cacheControl: "3600",
-      upsert: false,
-      contentType: "audio/webm",
+  try {
+    // Use the API route for uploads (works on both client and server)
+    const formData = new FormData();
+    formData.append("file", audioBlob);
+    formData.append("path", path);
+    formData.append("contentType", "audio/webm");
+
+    const response = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
     });
 
-  if (error) {
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Upload failed");
+    }
+
+    const data = await response.json();
+    return data.url;
+  } catch (error) {
     console.error("Error uploading audio:", error);
     throw new Error("Failed to upload audio to storage.");
   }
-
-  const { data: publicUrlData } = supabase.storage
-    .from("audio-recordings")
-    .getPublicUrl(path);
-
-  return publicUrlData.publicUrl;
 }

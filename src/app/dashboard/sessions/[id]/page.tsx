@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -36,8 +36,9 @@ interface SessionData {
 export default function SessionDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const resolvedParams = use(params);
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,7 +60,7 @@ export default function SessionDetailPage({
 
         // Fetch session summary
         const summaryResponse = await fetch(
-          `/api/sessions/${params.id}/summary`
+          `/api/sessions/${resolvedParams.id}/summary`
         );
         if (summaryResponse.ok) {
           const summaryData = await summaryResponse.json();
@@ -71,7 +72,7 @@ export default function SessionDetailPage({
           await supabase
             .from("conversations")
             .select("*")
-            .eq("session_id", params.id)
+            .eq("session_id", resolvedParams.id)
             .order("timestamp", { ascending: true });
 
         if (conversationsError) {
@@ -88,7 +89,7 @@ export default function SessionDetailPage({
     };
 
     fetchSessionData();
-  }, [params.id, router, supabase]);
+  }, [resolvedParams.id, router, supabase]);
 
   const getRiteOfPassageEmoji = (rite: string) => {
     switch (rite) {
@@ -165,17 +166,22 @@ export default function SessionDetailPage({
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
           <div className="flex items-center space-x-4 mb-4">
             <div className="text-4xl">
-              {getRiteOfPassageEmoji(sessionData.session.rite_of_passage)}
+              {getRiteOfPassageEmoji(
+                sessionData.session?.rite_of_passage || "unknown"
+              )}
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {sessionData.session.title ||
-                  sessionData.session.rite_of_passage
-                    .replace("-", " ")
-                    .replace(/\b\w/g, (l) => l.toUpperCase())}
+                {sessionData.session?.title ||
+                  sessionData.session?.rite_of_passage
+                    ?.replace("-", " ")
+                    .replace(/\b\w/g, (l) => l.toUpperCase()) ||
+                  "Unknown Session"}
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                {formatDate(sessionData.session.created_at)}
+                {sessionData.session?.created_at
+                  ? formatDate(sessionData.session.created_at)
+                  : "Unknown date"}
               </p>
             </div>
           </div>
@@ -186,7 +192,7 @@ export default function SessionDetailPage({
                 Status:
               </span>
               <span className="ml-2 text-gray-900 dark:text-white capitalize">
-                {sessionData.session.status}
+                {sessionData.session?.status || "Unknown"}
               </span>
             </div>
             <div>

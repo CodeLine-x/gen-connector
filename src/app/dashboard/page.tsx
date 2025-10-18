@@ -17,50 +17,45 @@ interface Session {
 export default function DashboardPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/auth/login");
-        return;
+    const fetchSessions = async () => {
+      try {
+        // Check authentication
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          router.push("/auth/login");
+          return;
+        }
+
+        // Fetch user's sessions
+        const { data: sessionsData, error: sessionsError } = await supabase
+          .from("sessions")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+
+        if (sessionsError) {
+          console.error("Error fetching sessions:", sessionsError);
+          setError("Failed to load sessions");
+        } else {
+          setSessions(sessionsData || []);
+        }
+      } catch (err) {
+        console.error("Error fetching sessions:", err);
+        setError("Failed to load sessions");
+      } finally {
+        setIsLoading(false);
       }
-      setUser(user);
     };
 
-    const getSessions = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from("sessions")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching sessions:", error);
-      } else {
-        setSessions(data || []);
-      }
-    };
-
-    getUser();
-    getSessions();
-    setIsLoading(false);
+    fetchSessions();
   }, [router, supabase]);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/");
-  };
 
   const getRiteOfPassageEmoji = (rite: string) => {
     switch (rite) {
@@ -77,19 +72,6 @@ export default function DashboardPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400";
-      case "completed":
-        return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
-      case "archived":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
-    }
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -103,7 +85,12 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">
+            Loading dashboard...
+          </p>
+        </div>
       </div>
     );
   }
@@ -112,157 +99,100 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <div className="max-w-6xl mx-auto p-4">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Your Storytelling Journey
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Your Conversations
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Welcome back, {user?.email}
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              View and manage your intergenerational conversations
             </p>
           </div>
-          <div className="flex gap-4">
+          <Link
+            href="/categories"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+          >
+            Start New Conversation
+          </Link>
+        </div>
+
+        {error && (
+          <div className="bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+            <p className="text-red-700 dark:text-red-300">{error}</p>
+          </div>
+        )}
+
+        {/* Sessions Grid */}
+        {sessions.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">📝</div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              No Conversations Yet
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Start your first intergenerational conversation to preserve
+              precious memories.
+            </p>
             <Link
               href="/categories"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
             >
-              Start New Conversation
+              Begin Your Journey
             </Link>
-            <button
-              onClick={handleLogout}
-              className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-            >
-              Sign Out
-            </button>
           </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                <span className="text-2xl">📚</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Total Sessions
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {sessions.length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                <span className="text-2xl">✅</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Completed
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {sessions.filter((s) => s.status === "completed").length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
-                <span className="text-2xl">🔄</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  In Progress
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {sessions.filter((s) => s.status === "active").length}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Sessions List */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Recent Conversations
-            </h2>
-          </div>
-
-          {sessions.length === 0 ? (
-            <div className="p-8 text-center">
-              <div className="text-6xl mb-4">🎤</div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                No conversations yet
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Start your first intergenerational conversation to preserve
-                family stories.
-              </p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sessions.map((session) => (
               <Link
-                href="/categories"
-                className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+                key={session.id}
+                href={`/dashboard/sessions/${session.id}`}
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
               >
-                Begin Your Journey
-              </Link>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {sessions.map((session) => (
-                <div
-                  key={session.id}
-                  className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="text-3xl">
-                        {getRiteOfPassageEmoji(session.rite_of_passage)}
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                          {session.title ||
-                            session.rite_of_passage
-                              .replace("-", " ")
-                              .replace(/\b\w/g, (l) => l.toUpperCase())}
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {formatDate(session.created_at)}
-                        </p>
-                        {session.summary && (
-                          <p className="text-sm text-gray-500 dark:text-gray-500 mt-1 line-clamp-2">
-                            {session.summary}
-                          </p>
-                        )}
-                      </div>
+                <div className="p-6">
+                  <div className="flex items-center space-x-4 mb-4">
+                    <div className="text-3xl">
+                      {getRiteOfPassageEmoji(session.rite_of_passage)}
                     </div>
-                    <div className="flex items-center space-x-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                          session.status
-                        )}`}
-                      >
-                        {session.status}
-                      </span>
-                      <Link
-                        href={`/dashboard/sessions/${session.id}`}
-                        className="text-blue-600 hover:text-blue-500 font-medium"
-                      >
-                        View Details →
-                      </Link>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {session.title ||
+                          session.rite_of_passage
+                            .replace("-", " ")
+                            .replace(/\b\w/g, (l) => l.toUpperCase())}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {formatDate(session.created_at)}
+                      </p>
                     </div>
                   </div>
+
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        session.status === "completed"
+                          ? "bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200"
+                          : session.status === "active"
+                          ? "bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200"
+                          : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                      }`}
+                    >
+                      {session.status}
+                    </span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      View Details →
+                    </span>
+                  </div>
+
+                  {session.summary && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-3 line-clamp-2">
+                      {session.summary.substring(0, 100)}...
+                    </p>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

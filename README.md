@@ -5,8 +5,9 @@
 ### Prerequisites
 
 1. Node.js 18+ installed
-2. A Supabase account and project
-3. OpenAI API key
+2. A Supabase account and project (for database & authentication)
+3. A Vercel account (for file storage)
+4. OpenAI API key
 
 ### Setup Steps
 
@@ -21,10 +22,12 @@
    - Copy `.env.example` to `.env`
    - Fill in your Supabase and OpenAI credentials
 
-3. **Set up database:**
+3. **Set up database and storage:**
 
    - Follow the instructions in [`SUPABASE_SETUP.md`](./SUPABASE_SETUP.md)
    - Run `database-schema.sql` in your Supabase SQL Editor
+   - Follow the instructions in [`VERCEL_BLOB_SETUP.md`](./VERCEL_BLOB_SETUP.md)
+   - Create a Vercel Blob store and get your token
 
 4. **Run the development server:**
 
@@ -38,7 +41,8 @@
 
 ## 📚 Documentation
 
-- **[SUPABASE_SETUP.md](./SUPABASE_SETUP.md)** - Complete Supabase setup guide
+- **[SUPABASE_SETUP.md](./SUPABASE_SETUP.md)** - Complete Supabase setup guide (database & auth)
+- **[VERCEL_BLOB_SETUP.md](./VERCEL_BLOB_SETUP.md)** - Complete Vercel Blob setup guide (file storage)
 - **[database-schema.sql](./database-schema.sql)** - Database schema
 
 ---
