@@ -26,7 +26,10 @@ DROP FUNCTION IF EXISTS update_session_updated_at() CASCADE;
 CREATE TABLE sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  rite_of_passage TEXT NOT NULL CHECK (rite_of_passage IN ('birth_childhood', 'coming_of_age', 'marriage', 'death')),
+  rite_of_passage TEXT NOT NULL CHECK (rite_of_passage IN (
+    'childhood', 'school-life', 'work-life', 'relationships', 'hobbies', 'community',
+    'birth_childhood', 'coming_of_age', 'marriage', 'death'
+  )),
   
   -- Session metadata
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed', 'cancelled')),

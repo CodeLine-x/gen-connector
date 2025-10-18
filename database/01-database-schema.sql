@@ -1,3 +1,9 @@
+-- =====================================================
+-- Gen-Connector Database Schema V1 (Legacy)
+-- Purpose: Original simple schema for basic functionality
+-- Note: This is kept for reference. Use V2 for new deployments.
+-- =====================================================
+
 -- Sessions table
 CREATE TABLE sessions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -54,3 +60,4 @@ CREATE POLICY "Users can view own generated content" ON generated_content FOR SE
 CREATE POLICY "Users can insert own generated content" ON generated_content FOR INSERT WITH CHECK (
   session_id IN (SELECT id FROM sessions WHERE user_id = auth.uid())
 );
+

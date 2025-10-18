@@ -5,7 +5,7 @@ import ConversationInterface from "@/components/ConversationInterface";
 import AuthWrapper from "@/components/AuthWrapper";
 import { v4 as uuidv4 } from "uuid";
 
-export default function BirthChildhood() {
+export default function Childhood() {
   const [sessionId, setSessionId] = useState<string>("");
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export default function BirthChildhood() {
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-rose-100 dark:from-gray-900 dark:to-gray-800 p-4 flex items-center justify-center">
         <div className="max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto w-full">
           <ConversationInterface
-            riteOfPassage="birth-childhood"
+            riteOfPassage="childhood"
             sessionId={sessionId}
             onSessionUpdate={(sessionData) =>
               console.log("Session updated:", sessionData)
