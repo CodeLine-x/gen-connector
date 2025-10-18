@@ -106,6 +106,51 @@ export default function EnhancedConversationInterface({
     checkAuth();
   }, [supabase]);
 
+  // Define generateNewPrompts before it's used in other hooks
+  const generateNewPrompts = useCallback(
+    async (currentConversation: ConversationTurn[]) => {
+      setIsGeneratingPrompts(true);
+      try {
+        const response = await fetch("/api/generate-prompt", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            conversationHistory: currentConversation.map((turn) => ({
+              speaker: turn.speaker,
+              transcript: turn.transcript,
+            })),
+            riteOfPassage: riteOfPassage,
+          }),
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setCurrentPrompts(data.questions || []);
+        } else {
+          console.error("Failed to generate prompts:", data.error);
+          // Use fallback questions if API fails
+          setCurrentPrompts([
+            "Can you tell me more about that?",
+            "What was that experience like for you?",
+            "How did that make you feel?",
+          ]);
+        }
+      } catch (error) {
+        console.error("Error calling generate-prompt API:", error);
+        // Use fallback questions if API call fails completely
+        setCurrentPrompts([
+          "Can you tell me more about that?",
+          "What was that experience like for you?",
+          "How did that make you feel?",
+        ]);
+      } finally {
+        setIsGeneratingPrompts(false);
+      }
+    },
+    [riteOfPassage]
+  );
+
   // Initialize session and load existing data
   useEffect(() => {
     if (!isAuthenticated || isCheckingAuth) return;
@@ -214,50 +259,6 @@ export default function EnhancedConversationInterface({
     const interval = setInterval(updateStats, 1000);
     return () => clearInterval(interval);
   }, [conversation]);
-
-  const generateNewPrompts = useCallback(
-    async (currentConversation: ConversationTurn[]) => {
-      setIsGeneratingPrompts(true);
-      try {
-        const response = await fetch("/api/generate-prompt", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            conversationHistory: currentConversation.map((turn) => ({
-              speaker: turn.speaker,
-              transcript: turn.transcript,
-            })),
-            riteOfPassage: riteOfPassage,
-          }),
-        });
-        const data = await response.json();
-        if (response.ok) {
-          setCurrentPrompts(data.questions || []);
-        } else {
-          console.error("Failed to generate prompts:", data.error);
-          // Use fallback questions if API fails
-          setCurrentPrompts([
-            "Can you tell me more about that?",
-            "What was that experience like for you?",
-            "How did that make you feel?",
-          ]);
-        }
-      } catch (error) {
-        console.error("Error calling generate-prompt API:", error);
-        // Use fallback questions if API call fails completely
-        setCurrentPrompts([
-          "Can you tell me more about that?",
-          "What was that experience like for you?",
-          "How did that make you feel?",
-        ]);
-      } finally {
-        setIsGeneratingPrompts(false);
-      }
-    },
-    [riteOfPassage]
-  );
 
   const handleTranscriptUpdate = useCallback(
     async (transcript: string, isFinal: boolean) => {

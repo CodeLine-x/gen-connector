@@ -83,6 +83,36 @@ export default function ImprovedSegmentedConversation({
     checkAuth();
   }, [supabase, sessionId, riteOfPassage]);
 
+  // Generate new prompts
+  const generateNewPrompts = useCallback(async () => {
+    try {
+      const allTurns = segments.flatMap((seg) => seg.turns);
+
+      if (allTurns.length === 0) return;
+
+      const response = await fetch("/api/generate-prompt", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          conversationHistory: allTurns.map((turn) => ({
+            speaker: turn.speaker,
+            transcript: turn.transcript,
+          })),
+          riteOfPassage: riteOfPassage,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.questions) {
+        setCurrentPrompts(data.questions);
+      }
+    } catch (error) {
+      console.error("Error generating prompts:", error);
+    }
+  }, [segments, riteOfPassage]);
+
   // Process segment (30-second snapshot)
   const processSegment = useCallback(
     async (audioBlob: Blob, actualDuration: number) => {
@@ -141,14 +171,21 @@ export default function ImprovedSegmentedConversation({
         // Save turns to database
         const turns = await segmentManagerRef.current.saveTurns(
           segment.id,
-          conversationTurns.map((turn) => ({
-            speaker: turn.speaker,
-            transcript: turn.transcript,
-            startTime: turn.timestamp,
-            endTime: turn.timestamp + 1, // Estimate
-            confidence: turn.confidence,
-            speakerId: turn.speaker === "elderly" ? "speaker_0" : "speaker_1",
-          }))
+          conversationTurns.map(
+            (turn: {
+              speaker: string;
+              transcript: string;
+              timestamp: number;
+              confidence: number;
+            }) => ({
+              speaker: turn.speaker,
+              transcript: turn.transcript,
+              startTime: turn.timestamp,
+              endTime: turn.timestamp + 1, // Estimate
+              confidence: turn.confidence,
+              speakerId: turn.speaker === "elderly" ? "speaker_0" : "speaker_1",
+            })
+          )
         );
 
         // Update UI with turns
@@ -204,6 +241,31 @@ export default function ImprovedSegmentedConversation({
     mediaRecorderRef.current.stop();
 
     // The onstop handler will process the segment and restart recording
+  }, []);
+
+  // Stop recording
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && isRecordingRef.current) {
+      // Set ref to false to prevent new recorder from starting
+      isRecordingRef.current = false;
+
+      // Clear intervals
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+      if (snapshotIntervalRef.current) {
+        clearInterval(snapshotIntervalRef.current);
+        snapshotIntervalRef.current = null;
+      }
+
+      // Stop recorder (will trigger onstop which processes the final segment)
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      setRecordingTime(0);
+
+      console.log("⏹️ Recording stopped by user");
+    }
   }, []);
 
   // Start recording with 30-second auto-snapshots
@@ -305,61 +367,6 @@ export default function ImprovedSegmentedConversation({
       alert("Please allow microphone access to record.");
     }
   }, [sessionId, processSegment, takeSnapshot, stopRecording]);
-
-  // Stop recording
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecordingRef.current) {
-      // Set ref to false to prevent new recorder from starting
-      isRecordingRef.current = false;
-
-      // Clear intervals
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-        timerIntervalRef.current = null;
-      }
-      if (snapshotIntervalRef.current) {
-        clearInterval(snapshotIntervalRef.current);
-        snapshotIntervalRef.current = null;
-      }
-
-      // Stop recorder (will trigger onstop which processes the final segment)
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      setRecordingTime(0);
-
-      console.log("⏹️ Recording stopped by user");
-    }
-  }, []);
-
-  // Generate new prompts
-  const generateNewPrompts = useCallback(async () => {
-    try {
-      const allTurns = segments.flatMap((seg) => seg.turns);
-
-      if (allTurns.length === 0) return;
-
-      const response = await fetch("/api/generate-prompt", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          conversationHistory: allTurns.map((turn) => ({
-            speaker: turn.speaker,
-            transcript: turn.transcript,
-          })),
-          riteOfPassage: riteOfPassage,
-        }),
-      });
-
-      const data = await response.json();
-      if (response.ok && data.questions) {
-        setCurrentPrompts(data.questions);
-      }
-    } catch (error) {
-      console.error("Error generating prompts:", error);
-    }
-  }, [segments, riteOfPassage]);
 
   // End session and generate video
   const endSessionAndGenerateVideo = useCallback(async () => {

@@ -51,7 +51,6 @@ export default function SegmentedConversationInterface({
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   const supabase = createClient();
-  const recorderRef = useRef<MediaRecorder | null>(null);
 
   // Check authentication
   useCallback(async () => {
@@ -85,6 +84,33 @@ export default function SegmentedConversationInterface({
     setCurrentSegment(newSegment);
     setIsRecording(true);
   }, []);
+
+  const generateNewPrompts = useCallback(
+    async (allTurns: ConversationTurn[]) => {
+      try {
+        const response = await fetch("/api/generate-prompt", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            conversationHistory: allTurns.map((turn) => ({
+              speaker: turn.speaker,
+              transcript: turn.transcript,
+            })),
+            riteOfPassage: riteOfPassage,
+          }),
+        });
+        const data = await response.json();
+        if (response.ok && data.questions) {
+          setCurrentPrompts(data.questions);
+        }
+      } catch (error) {
+        console.error("Error generating prompts:", error);
+      }
+    },
+    [riteOfPassage]
+  );
 
   const handleSegmentComplete = useCallback(
     async (conversationTurns: ConversationTurn[]) => {
@@ -158,35 +184,6 @@ export default function SegmentedConversationInterface({
       isAuthenticated,
       generateNewPrompts,
     ]
-  );
-
-  const generateNewPrompts = useCallback(
-    async (allTurns: ConversationTurn[]) => {
-      try {
-        const response = await fetch("/api/generate-prompt", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            conversationHistory: allTurns.map((turn) => ({
-              speaker: turn.speaker,
-              transcript: turn.transcript,
-            })),
-            riteOfPassage: riteOfPassage,
-          }),
-        });
-        const data = await response.json();
-        if (response.ok) {
-          setCurrentPrompts(data.questions || []);
-        } else {
-          console.error("Failed to generate prompts:", data.error);
-        }
-      } catch (error) {
-        console.error("Error calling generate-prompt API:", error);
-      }
-    },
-    [riteOfPassage]
   );
 
   const endSessionAndGenerateVideo = useCallback(async () => {
@@ -374,7 +371,6 @@ export default function SegmentedConversationInterface({
         ) : (
           <div className="w-full max-w-md">
             <SpeakerAwareVoiceRecorder
-              ref={recorderRef}
               onConversationComplete={handleSegmentComplete}
               onRecordingStart={() => console.log("Recording started")}
               onRecordingStop={() => console.log("Recording stopped")}

@@ -82,7 +82,9 @@ Generate 2-3 follow-up questions for the young adult to ask. Make them specific 
     console.error("Prompt generation error:", error);
 
     // Handle specific OpenAI API errors
-    if (error.code === "model_not_found") {
+    const errorCode = error && typeof error === "object" && "code" in error ? (error as { code: string }).code : undefined;
+    
+    if (errorCode === "model_not_found") {
       return NextResponse.json(
         {
           error: "AI model not available. Please check your OpenAI API access.",
@@ -91,7 +93,7 @@ Generate 2-3 follow-up questions for the young adult to ask. Make them specific 
       );
     }
 
-    if (error.code === "insufficient_quota") {
+    if (errorCode === "insufficient_quota") {
       return NextResponse.json(
         { error: "OpenAI API quota exceeded. Please check your billing." },
         { status: 402 }
