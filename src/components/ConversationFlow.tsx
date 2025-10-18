@@ -56,8 +56,6 @@ export default function ConversationFlow({
 }: ConversationFlowProps) {
   const [currentScreen, setCurrentScreen] = useState<Screen>("start-recording");
   const [currentMessage, setCurrentMessage] = useState<string>("");
-  const [currentSegment, setCurrentSegment] = useState<number>(0);
-  const [totalSegments] = useState<number>(10); // Max 10 segments (5 minutes / 30 seconds)
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]); // All generated media
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string>("");
   const [recordingTime, setRecordingTime] = useState<number>(0); // Current recording time in seconds
@@ -79,7 +77,6 @@ export default function ConversationFlow({
   const processSegment = useCallback(
     async (segmentNumber: number, audioBlob: Blob) => {
       console.log(`📍 Processing segment ${segmentNumber}...`);
-      setCurrentSegment(segmentNumber);
 
       // Mark this segment as processed
       processedSegmentsRef.current.push(segmentNumber);
@@ -278,7 +275,7 @@ export default function ConversationFlow({
     } catch (error) {
       console.error("Error generating video:", error);
     }
-  }, [sessionId, supabase]);
+  }, [sessionId, supabase, category]);
 
   // Handler for title screen completion
   const handleTitleComplete = async () => {
@@ -372,7 +369,6 @@ export default function ConversationFlow({
 
     // Reset states
     setRecordingTime(0);
-    setCurrentSegment(0);
     setMediaItems([]); // Clear media items
     setIsGeneratingVideo(false);
     processedSegmentsRef.current = []; // Clear processed segments

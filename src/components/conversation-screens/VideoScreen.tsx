@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Link from "next/link";
 
 interface VideoScreenProps {
@@ -18,8 +17,6 @@ export default function VideoScreen({
   onSave,
   onStartAgain,
 }: VideoScreenProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
-
   const handleShare = async () => {
     if (onShare) {
       onShare();
@@ -97,8 +94,6 @@ export default function VideoScreen({
                 filter: "sepia(0.3) contrast(0.9)",
                 boxShadow: "inset 0 0 100px rgba(0,0,0,0.5)",
               }}
-              onPlay={() => setIsPlaying(true)}
-              onPause={() => setIsPlaying(false)}
             >
               Your browser does not support the video tag.
             </video>

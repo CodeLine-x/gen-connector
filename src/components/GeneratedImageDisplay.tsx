@@ -53,7 +53,8 @@ export default function GeneratedImageDisplay({
         </div>
       ) : (
         <div className={`w-full ${imageLoading ? "hidden" : "block"}`}>
-          {/* Using regular img tag for maximum compatibility */}
+          {/* Using regular img tag for maximum compatibility with Vercel Blob URLs */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imageUrl}
             alt={prompt || "Generated memory image"}
