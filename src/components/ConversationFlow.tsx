@@ -153,44 +153,84 @@ export default function ConversationFlow({
           setCurrentScreen("message");
         }
 
-        // Step 4: Generate image for this segment
-        const imageResponse = await fetch("/api/fal/generate-image", {
+        // Step 4: Check for song mentions first (priority over images)
+        const songSearchResponse = await fetch("/api/search-song", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            sessionId,
-            segmentNumber,
             turns: conversationTurns,
           }),
         });
 
-        if (imageResponse.ok) {
-          const { imageUrl } = await imageResponse.json();
-          console.log(`✅ Image ${segmentNumber} generated:`, imageUrl);
+        let songFound = false;
 
-          // Add to media items array
-          setMediaItems((prev) => [
-            ...prev,
-            {
-              segmentNumber,
-              imageUrl,
-              type: "image",
-            },
-          ]);
+        if (songSearchResponse.ok) {
+          const songResult = await songSearchResponse.json();
 
-          // Transition to carousel screen (or stay on it if already there)
-          setCurrentScreen("carousel");
-        } else {
-          console.error(
-            `❌ Image generation failed for segment ${segmentNumber}`
-          );
-          // If first segment fails, go back to beginning
-          if (segmentNumber === 1) {
-            setTimeout(() => {
-              setCurrentScreen("beginning");
-            }, 2000);
+          if (songResult.found) {
+            console.log(
+              `🎵 Song found for segment ${segmentNumber}:`,
+              songResult.songTitle
+            );
+
+            // Add song to media items
+            setMediaItems((prev) => [
+              ...prev,
+              {
+                segmentNumber,
+                audioUrl: songResult.youtubeUrl || songResult.spotifyUrl,
+                caption: `${songResult.songTitle || "Song"} ${
+                  songResult.artistName ? `by ${songResult.artistName}` : ""
+                }`,
+                type: "audio",
+              },
+            ]);
+
+            songFound = true;
+            setCurrentScreen("carousel");
           }
-          // For subsequent segments, just keep showing the carousel with existing media
+        }
+
+        // Step 5: If no song found, generate image instead
+        if (!songFound) {
+          const imageResponse = await fetch("/api/fal/generate-image", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId,
+              segmentNumber,
+              turns: conversationTurns,
+            }),
+          });
+
+          if (imageResponse.ok) {
+            const { imageUrl } = await imageResponse.json();
+            console.log(`✅ Image ${segmentNumber} generated:`, imageUrl);
+
+            // Add to media items array
+            setMediaItems((prev) => [
+              ...prev,
+              {
+                segmentNumber,
+                imageUrl,
+                type: "image",
+              },
+            ]);
+
+            // Transition to carousel screen (or stay on it if already there)
+            setCurrentScreen("carousel");
+          } else {
+            console.error(
+              `❌ Image generation failed for segment ${segmentNumber}`
+            );
+            // If first segment fails, go back to beginning
+            if (segmentNumber === 1) {
+              setTimeout(() => {
+                setCurrentScreen("beginning");
+              }, 2000);
+            }
+            // For subsequent segments, just keep showing the carousel with existing media
+          }
         }
       } catch (error) {
         console.error("Error processing segment:", error);
@@ -242,6 +282,19 @@ export default function ConversationFlow({
         segments?.flatMap((segment) => segment.turns || []) || [];
       console.log(`📝 Total turns across all segments: ${allTurns.length}`);
 
+      // Find any songs from the media items
+      const foundSongs = mediaItems.filter(
+        (item) => item.type === "audio" && item.audioUrl
+      );
+      const selectedSongUrl =
+        foundSongs.length > 0 ? foundSongs[0].audioUrl : undefined;
+
+      if (selectedSongUrl) {
+        console.log(
+          `🎵 Using song from segment for video: ${foundSongs[0].caption}`
+        );
+      }
+
       // Generate video from all turns
       const videoResponse = await fetch("/api/fal/generate-video", {
         method: "POST",
@@ -250,18 +303,24 @@ export default function ConversationFlow({
           sessionId,
           turns: allTurns,
           riteOfPassage: category,
+          songUrl: selectedSongUrl, // Include found song if available
         }),
       });
 
       if (videoResponse.ok) {
-        const { videoUrl } = await videoResponse.json();
-        console.log("Video generated:", videoUrl);
-        setGeneratedVideoUrl(videoUrl);
+        const videoData = await videoResponse.json();
+
+        // Always use AI-generated video
+        console.log("Video generated:", videoData.videoUrl);
+        setGeneratedVideoUrl(videoData.videoUrl);
 
         // Update session status to completed
         const { error: updateError } = await supabase
           .from("sessions")
-          .update({ status: "completed" })
+          .update({
+            status: "completed",
+            has_audio: selectedSongUrl ? true : false, // Mark if audio was available
+          })
           .eq("id", sessionId);
 
         if (updateError) {
@@ -434,6 +493,9 @@ export default function ConversationFlow({
           <VideoScreen
             categoryTitle={categoryTitle}
             videoUrl={generatedVideoUrl}
+            onStartAgain={handleBackToStart}
+            mediaItems={mediaItems} // Pass media items for audio overlay
+            hasAudio={mediaItems.some((item) => item.type === "audio")} // Check if we have audio
           />
         );
 

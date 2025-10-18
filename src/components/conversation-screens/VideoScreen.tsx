@@ -1,12 +1,22 @@
 import Link from "next/link";
 
-interface VideoScreenProps {
+export interface MediaItem {
+  segmentNumber: number;
+  imageUrl?: string;
+  audioUrl?: string;
+  caption?: string;
+  type: "image" | "audio";
+}
+
+export interface VideoScreenProps {
   categoryTitle: string;
   videoUrl?: string;
   thumbnailUrl?: string;
   onShare?: () => void;
   onSave?: () => void;
   onStartAgain?: () => void;
+  mediaItems?: MediaItem[];
+  hasAudio?: boolean;
 }
 
 export default function VideoScreen({
@@ -16,7 +26,40 @@ export default function VideoScreen({
   onShare,
   onSave,
   onStartAgain,
+  mediaItems = [],
+  hasAudio = false,
 }: VideoScreenProps) {
+  // Get the song URL if available for audio overlay
+  const songItem = mediaItems.find(
+    (item) => item.type === "audio" && item.audioUrl
+  );
+  const songUrl = songItem?.audioUrl;
+
+  // Extract YouTube/Spotify ID for embed
+  const getEmbedUrl = (url: string | undefined): string | null => {
+    if (!url) return null;
+
+    if (url.includes("youtube.com") || url.includes("youtu.be")) {
+      const regExp =
+        /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+      const match = url.match(regExp);
+      const videoId = match && match[2].length === 11 ? match[2] : null;
+      return videoId
+        ? `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=0&loop=1&playlist=${videoId}`
+        : null;
+    }
+
+    if (url.includes("spotify.com")) {
+      const regExp = /track\/([a-zA-Z0-9]+)/;
+      const match = url.match(regExp);
+      const trackId = match ? match[1] : null;
+      return trackId ? `https://open.spotify.com/embed/track/${trackId}` : null;
+    }
+
+    return null;
+  };
+
+  const audioEmbedUrl = getEmbedUrl(songUrl);
   const handleShare = async () => {
     if (onShare) {
       onShare();
@@ -81,10 +124,12 @@ export default function VideoScreen({
         </h1>
       </div>
 
-      {/* Video Player / Thumbnail */}
-      <div className="flex-1 flex items-center justify-center mb-8">
+      {/* Video Player with Optional Audio Overlay */}
+      <div className="flex-1 flex flex-col items-center justify-center mb-8 gap-4">
+        {/* AI-Generated Video */}
         <div className="relative w-full max-w-2xl aspect-[3/4] rounded-lg overflow-hidden shadow-2xl">
           {videoUrl ? (
+            // AI-Generated Video
             <video
               src={videoUrl}
               poster={thumbnailUrl}
@@ -98,7 +143,7 @@ export default function VideoScreen({
               Your browser does not support the video tag.
             </video>
           ) : (
-            // Placeholder thumbnail with vintage effect
+            // Placeholder thumbnail
             <div
               className="w-full h-full bg-cover bg-center relative"
               style={{
@@ -106,7 +151,6 @@ export default function VideoScreen({
                 filter: "sepia(0.3) contrast(0.9) grayscale(0.5)",
               }}
             >
-              {/* Vignette overlay */}
               <div
                 className="absolute inset-0"
                 style={{
@@ -117,6 +161,34 @@ export default function VideoScreen({
             </div>
           )}
         </div>
+
+        {/* Audio Player (if audio was found) */}
+        {hasAudio && audioEmbedUrl && (
+          <div className="w-full max-w-2xl">
+            <div className="relative w-full h-20 rounded-lg overflow-hidden shadow-lg">
+              <iframe
+                src={audioEmbedUrl}
+                width="100%"
+                height="80"
+                frameBorder="0"
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy"
+                style={{ borderRadius: "8px" }}
+              />
+            </div>
+            {songItem?.caption && (
+              <p
+                className="text-center text-white/70 mt-2"
+                style={{
+                  fontFamily: "var(--font-mansalva)",
+                  fontSize: "14px",
+                }}
+              >
+                🎵 {songItem.caption}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Action Buttons */}

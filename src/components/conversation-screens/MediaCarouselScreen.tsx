@@ -4,6 +4,20 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import RecordingProgressBar from "@/components/RecordingProgressBar";
 
+// Helper function to extract YouTube video ID
+function extractYouTubeId(url: string): string {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return match && match[2].length === 11 ? match[2] : "";
+}
+
+// Helper function to extract Spotify track ID
+function extractSpotifyId(url: string): string {
+  const regExp = /track\/([a-zA-Z0-9]+)/;
+  const match = url.match(regExp);
+  return match ? match[1] : "";
+}
+
 interface MediaItem {
   segmentNumber: number;
   imageUrl?: string;
@@ -155,23 +169,77 @@ export default function MediaCarouselScreen({
           )}
 
           {currentMedia?.type === "audio" && currentMedia.audioUrl && (
-            <div className="flex flex-col items-center">
-              <div className="w-64 h-64 bg-gradient-to-br from-orange-500 to-pink-500 rounded-full flex items-center justify-center mb-6">
-                <svg
-                  width="80"
-                  height="80"
-                  viewBox="0 0 24 24"
-                  fill="white"
-                  stroke="white"
-                  strokeWidth="2"
+            <div className="flex flex-col items-center w-full max-w-2xl">
+              {currentMedia.audioUrl.includes("youtube.com") ||
+              currentMedia.audioUrl.includes("youtu.be") ? (
+                // YouTube embed (verified as playable)
+                <div className="relative w-full aspect-video mb-4 rounded-lg overflow-hidden shadow-2xl">
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    src={`https://www.youtube.com/embed/${extractYouTubeId(
+                      currentMedia.audioUrl
+                    )}?autoplay=0`}
+                    title={currentMedia.caption || "Music Video"}
+                    frameBorder="0"
+                    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="absolute inset-0"
+                  />
+                </div>
+              ) : currentMedia.audioUrl.includes("spotify.com") ? (
+                // Spotify embed
+                <div className="relative w-full h-80 mb-4 rounded-lg overflow-hidden shadow-2xl">
+                  <iframe
+                    style={{ borderRadius: "12px" }}
+                    src={`https://open.spotify.com/embed/track/${extractSpotifyId(
+                      currentMedia.audioUrl
+                    )}`}
+                    width="100%"
+                    height="100%"
+                    frameBorder="0"
+                    allowFullScreen
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy"
+                  />
+                </div>
+              ) : (
+                // Fallback: Music icon + link
+                <div className="flex flex-col items-center">
+                  <div className="w-64 h-64 bg-gradient-to-br from-orange-500 to-pink-500 rounded-full flex items-center justify-center mb-6">
+                    <svg
+                      width="80"
+                      height="80"
+                      viewBox="0 0 24 24"
+                      fill="white"
+                      stroke="white"
+                      strokeWidth="2"
+                    >
+                      <path d="M9 18V5l12-2v13M9 18c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3 3 1.34 3 3zm12-2c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3 3 1.34 3 3z" />
+                    </svg>
+                  </div>
+                  <a
+                    href={currentMedia.audioUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-full font-medium"
+                  >
+                    🎵 Listen on External Site
+                  </a>
+                </div>
+              )}
+
+              {currentMedia.caption && (
+                <p
+                  className="text-white text-center mt-4"
+                  style={{
+                    fontFamily: "var(--font-mansalva)",
+                    fontSize: "clamp(20px, 4vw, 28px)",
+                  }}
                 >
-                  <path d="M9 18V5l12-2v13M9 18c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3 3 1.34 3 3zm12-2c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3 3 1.34 3 3z" />
-                </svg>
-              </div>
-              <audio controls className="w-full max-w-md">
-                <source src={currentMedia.audioUrl} type="audio/mpeg" />
-                Your browser does not support audio playback.
-              </audio>
+                  {currentMedia.caption}
+                </p>
+              )}
             </div>
           )}
 

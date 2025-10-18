@@ -6,7 +6,7 @@ import { uploadVideoToBlob } from "@/lib/blobStorage";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { turns, riteOfPassage, sessionId } = body;
+    const { turns, riteOfPassage, sessionId, songUrl } = body;
 
     if (!turns || !Array.isArray(turns)) {
       return NextResponse.json(
@@ -16,6 +16,15 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`🎬 Generating video for session ${sessionId || "unknown"}...`);
+
+    // Always generate AI video, with or without audio
+    if (songUrl) {
+      console.log(
+        "🎵 Song detected - will generate AI video with audio mixing"
+      );
+    } else {
+      console.log("🎬 No song found - will generate AI video without audio");
+    }
 
     // Step 1: Generate comprehensive video prompt from all conversation
     const promptResult = await generateVideoPromptFromSession(
