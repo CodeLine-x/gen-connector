@@ -334,7 +334,7 @@ export default function ConversationFlow({
     } catch (error) {
       console.error("Error generating video:", error);
     }
-  }, [sessionId, supabase, category]);
+  }, [sessionId, supabase, category, mediaItems]);
 
   // Handler for title screen completion
   const handleTitleComplete = async () => {

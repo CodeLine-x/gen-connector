@@ -82,7 +82,7 @@ class ExaService {
         for (const result of spotifyResults) {
           const isValid = await this.verifyMusicUrl(result.url);
           if (isValid) {
-            const songInfo = this.parseSongInfo(result.title, result.url);
+            const songInfo = this.parseSongInfo(result.title);
             console.log(`✅ Valid Spotify track found: ${songInfo.songTitle}`);
 
             return {
@@ -100,7 +100,7 @@ class ExaService {
         for (const result of youtubeResults) {
           const isValid = await this.verifyYouTubeVideo(result.url);
           if (isValid) {
-            const songInfo = this.parseSongInfo(result.title, result.url);
+            const songInfo = this.parseSongInfo(result.title);
             console.log(`✅ Valid YouTube video found: ${songInfo.songTitle}`);
 
             return {
@@ -135,7 +135,7 @@ class ExaService {
         signal: AbortSignal.timeout(3000), // 3 second timeout
       });
       return response.ok;
-    } catch (error) {
+    } catch {
       console.log(`❌ Spotify URL not accessible: ${url}`);
       return false;
     }
@@ -163,7 +163,7 @@ class ExaService {
       }
 
       return false;
-    } catch (error) {
+    } catch {
       console.log(`❌ YouTube video not accessible or not embeddable: ${url}`);
       return false;
     }
@@ -182,10 +182,11 @@ class ExaService {
   /**
    * Parse song title and artist from result title
    */
-  private parseSongInfo(
-    title: string,
-    url: string
-  ): { songTitle?: string; artistName?: string; year?: string } {
+  private parseSongInfo(title: string): {
+    songTitle?: string;
+    artistName?: string;
+    year?: string;
+  } {
     // Common patterns:
     // "Artist - Song Title (Official Video)"
     // "Song Title by Artist"
