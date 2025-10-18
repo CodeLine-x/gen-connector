@@ -2,8 +2,15 @@
 
 import { useState, useEffect } from "react";
 
+interface EnvInfo {
+  NEXT_PUBLIC_SITE_URL: string | undefined;
+  windowOrigin: string;
+  userAgent: string;
+  timestamp: string;
+}
+
 export default function EnvironmentDebug() {
-  const [envInfo, setEnvInfo] = useState<any>(null);
+  const [envInfo, setEnvInfo] = useState<EnvInfo | null>(null);
 
   useEffect(() => {
     setEnvInfo({
