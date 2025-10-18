@@ -186,13 +186,20 @@ export async function generateImageWithRetry(
       ) {
         console.log("⚠️ Payload too large, returning placeholder image");
         return {
-          image: {
-            url: getPlaceholderImageUrl(),
-            content_type: "image/png",
-            file_name: "placeholder.png",
-            file_size: 0,
+          images: [
+            {
+              url: getPlaceholderImageUrl(),
+              width: 512,
+              height: 512,
+              content_type: "image/png",
+            },
+          ],
+          timings: {
+            inference: 0,
           },
           seed: 0,
+          has_nsfw_concepts: [false],
+          prompt: "Placeholder image due to payload size limit",
         };
       }
 
