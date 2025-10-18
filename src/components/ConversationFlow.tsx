@@ -160,7 +160,10 @@ export default function ConversationFlow({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               text: `Segment ${segmentNumber} conversation: ${conversationTurns
-                .map((t: any) => `${t.speaker}: ${t.transcript}`)
+                .map(
+                  (t: { speaker: string; transcript: string }) =>
+                    `${t.speaker}: ${t.transcript}`
+                )
                 .join(" ")
                 .slice(0, 1000)}`, // Limit to 1000 chars to avoid payload size issues
               metadata: {
@@ -288,7 +291,7 @@ export default function ConversationFlow({
         console.error("Error processing segment:", error);
       }
     },
-    [sessionId, supabase]
+    [sessionId, supabase, category]
   );
 
   // Handle session completion (5 minutes or early stop)
@@ -365,7 +368,7 @@ export default function ConversationFlow({
           // Limit memories to prevent payload size issues
           userMemories = (results.memories || [])
             .slice(0, 5)
-            .map((memory: any) => ({
+            .map((memory: { text: string; [key: string]: unknown }) => ({
               ...memory,
               text: memory.text.slice(0, 500), // Limit memory text to 500 chars
             }));
@@ -443,7 +446,7 @@ export default function ConversationFlow({
         if (results.memories && results.memories.length > 0) {
           console.log(
             "📝 User memories:",
-            results.memories.map((m: any) => m.text)
+            results.memories.map((m: { text: string }) => m.text)
           );
         }
       }

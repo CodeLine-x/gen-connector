@@ -129,7 +129,7 @@ Generate photorealistic prompts for this memory. Focus on visual details, emotio
 export async function generateVideoPromptFromSession(
   allTurns: ConversationTurn[],
   riteOfPassage?: string,
-  memories: any[] = []
+  memories: { text: string; [key: string]: unknown }[] = []
 ): Promise<PromptGenerationResult> {
   try {
     console.log("🎬 Generating session video prompt with GPT-3.5-turbo...");

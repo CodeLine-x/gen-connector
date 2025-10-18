@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createMem0Service } from "@/lib/mem0Service";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const mem0 = createMem0Service();
 
@@ -42,8 +42,8 @@ export async function POST(request: NextRequest) {
         metadata: {
           test: true,
           timestamp: new Date().toISOString(),
+          entity_id: entityId || "test-entity",
         },
-        entityId: entityId || "test-entity",
       });
 
       return NextResponse.json({
@@ -55,7 +55,9 @@ export async function POST(request: NextRequest) {
       // Test searching memories
       const results = await mem0.searchMemories({
         query: text || "test",
-        entityId: entityId || "test-entity",
+        metadata: {
+          entity_id: entityId || "test-entity",
+        },
         limit: 5,
       });
 

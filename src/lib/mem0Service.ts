@@ -11,14 +11,14 @@ interface Mem0Config {
 interface Memory {
   id?: string;
   text: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at?: string;
   updated_at?: string;
 }
 
 interface SearchParams {
   query: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   limit?: number;
 }
 
@@ -30,7 +30,7 @@ interface SearchResult {
 interface AddMemoryResponse {
   id: string;
   text: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
 }
 
@@ -50,8 +50,8 @@ class Mem0Service {
   private async makeRequest(
     endpoint: string,
     method: "GET" | "POST" | "PUT" | "DELETE" = "GET",
-    data?: any
-  ): Promise<any> {
+    data?: unknown
+  ): Promise<unknown> {
     const url = `${this.baseUrl}${endpoint}`;
 
     const headers: Record<string, string> = {
@@ -88,7 +88,11 @@ class Mem0Service {
   async addMemory(
     memory: Omit<Memory, "id" | "created_at" | "updated_at">
   ): Promise<AddMemoryResponse> {
-    return this.makeRequest("/v1/memories/", "POST", memory);
+    return this.makeRequest(
+      "/v1/memories/",
+      "POST",
+      memory
+    ) as Promise<AddMemoryResponse>;
   }
 
   /**
@@ -97,7 +101,9 @@ class Mem0Service {
   async addMemories(
     memories: Omit<Memory, "id" | "created_at" | "updated_at">[]
   ): Promise<AddMemoryResponse[]> {
-    return this.makeRequest("/v1/memories/batch/", "POST", { memories });
+    return this.makeRequest("/v1/memories/batch/", "POST", {
+      memories,
+    }) as Promise<AddMemoryResponse[]>;
   }
 
   /**
@@ -105,7 +111,7 @@ class Mem0Service {
    */
   async getMemories(
     entityId: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<Memory[]> {
     const params = new URLSearchParams();
     params.append("entity_id", entityId);
@@ -116,14 +122,20 @@ class Mem0Service {
       });
     }
 
-    return this.makeRequest(`/v1/memories/?${params.toString()}`);
+    return this.makeRequest(`/v1/memories/?${params.toString()}`) as Promise<
+      Memory[]
+    >;
   }
 
   /**
    * Search memories using semantic search
    */
   async searchMemories(params: SearchParams): Promise<SearchResult> {
-    return this.makeRequest("/v1/memories/search/", "POST", params);
+    return this.makeRequest(
+      "/v1/memories/search/",
+      "POST",
+      params
+    ) as Promise<SearchResult>;
   }
 
   /**
@@ -133,7 +145,11 @@ class Mem0Service {
     memoryId: string,
     updates: Partial<Memory>
   ): Promise<Memory> {
-    return this.makeRequest(`/v1/memories/${memoryId}/`, "PUT", updates);
+    return this.makeRequest(
+      `/v1/memories/${memoryId}/`,
+      "PUT",
+      updates
+    ) as Promise<Memory>;
   }
 
   /**
@@ -155,14 +171,14 @@ class Mem0Service {
   /**
    * Get project details
    */
-  async getProject(): Promise<any> {
+  async getProject(): Promise<unknown> {
     return this.makeRequest("/v1/projects/");
   }
 
   /**
    * Create a new project
    */
-  async createProject(name: string, description?: string): Promise<any> {
+  async createProject(name: string, description?: string): Promise<unknown> {
     return this.makeRequest("/v1/projects/", "POST", { name, description });
   }
 
@@ -175,7 +191,7 @@ class Mem0Service {
     custom_instructions?: string;
     custom_categories?: Array<{ [key: string]: string }>;
     enable_graph?: boolean;
-  }): Promise<any> {
+  }): Promise<unknown> {
     return this.makeRequest("/v1/projects/", "PUT", updates);
   }
 }
