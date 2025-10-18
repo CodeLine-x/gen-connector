@@ -70,16 +70,29 @@ export async function POST(request: NextRequest) {
 
     // Create turns if segment was created successfully
     if (segmentData) {
-      const turnsData = conversationTurns.map((turn, index) => ({
-        segment_id: segmentData.id,
-        session_id: sessionId,
-        speaker: turn.speaker === "elderly" ? "elderly" : "young_adult",
-        speaker_id: turn.speakerId,
-        transcript: turn.text,
-        start_time_seconds: turn.startTime,
-        end_time_seconds: turn.endTime,
-        turn_number: index + 1,
-      }));
+      // Use the raw diarization segments which have the correct properties
+      const turnsData = diarizationResult.segments.map((segment, index) => {
+        // Map speaker to role based on speakerRoles
+        let speakerRole: "elderly" | "young_adult";
+        if (speakerRoles.elderly.includes(segment.speaker)) {
+          speakerRole = "elderly";
+        } else if (speakerRoles.youngAdult.includes(segment.speaker)) {
+          speakerRole = "young_adult";
+        } else {
+          speakerRole = "young_adult"; // Default
+        }
+
+        return {
+          segment_id: segmentData.id,
+          session_id: sessionId,
+          speaker: speakerRole,
+          speaker_id: segment.speaker, // Original speaker ID from diarization
+          transcript: segment.text,
+          start_time_seconds: segment.startTime,
+          end_time_seconds: segment.endTime,
+          turn_number: index + 1,
+        };
+      });
 
       const { error: turnsError } = await supabase
         .from("turns")
