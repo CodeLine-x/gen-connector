@@ -82,7 +82,7 @@ export default function Categories() {
                   Death
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Reflect on life's final chapter
+                  Reflect on life&apos;s final chapter
                 </p>
               </div>
               <div className="text-2xl">🕊️</div>
