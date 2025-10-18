@@ -71,11 +71,7 @@ export default function ImprovedSegmentedConversation({
         const { error: sessionError } = await supabase.from("sessions").upsert({
           id: sessionId,
           user_id: user.id,
-          rite_of_passage: riteOfPassage.replace(/-/g, "_") as
-            | "birth_and_childhood"
-            | "coming_of_age"
-            | "marriage"
-            | "death",
+          rite_of_passage: riteOfPassage,
           status: "active",
         });
 

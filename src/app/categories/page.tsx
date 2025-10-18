@@ -11,32 +11,32 @@ const categories: Category[] = [
   {
     title: "Childhood",
     image: "/1.4 - Childhood.png",
-    href: "/childhood",
+    href: "/conversation/childhood",
   },
   {
     title: "School Life",
     image: "/1.4 - School Life.png",
-    href: "/school-life",
+    href: "/conversation/school-life",
   },
   {
     title: "Work Life",
     image: "/1.4 - Work Life.png",
-    href: "/work-life",
+    href: "/conversation/work-life",
   },
   {
     title: "Relationships",
     image: "/1.4 - Relationships.png",
-    href: "/relationships",
+    href: "/conversation/relationships",
   },
   {
     title: "Hobbies",
     image: "/1.4 - Hobbies.png",
-    href: "/hobbies",
+    href: "/conversation/hobbies",
   },
   {
     title: "Community",
     image: "/1.4 - Community.png",
-    href: "/community",
+    href: "/conversation/community",
   },
 ];
 
