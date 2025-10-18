@@ -9,7 +9,7 @@ export default function Death() {
             Death
           </h1>
           <p className="text-gray-600 dark:text-gray-300 text-lg">
-            Reflect on life's final chapter
+            Reflect on life&apos;s final chapter
           </p>
         </div>
 
@@ -20,7 +20,7 @@ export default function Death() {
           </h2>
           <p className="text-gray-600 dark:text-gray-300 mb-8">
             This section is under development. Check back soon for interactive
-            content about life's final chapter.
+            content about life&apos;s final chapter.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
