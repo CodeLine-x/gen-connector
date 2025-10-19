@@ -37,15 +37,8 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect conversation routes
-  if (request.nextUrl.pathname.startsWith("/conversation/")) {
-    if (!user) {
-      // Redirect to login if not authenticated
-      const url = request.nextUrl.clone();
-      url.pathname = "/auth/login";
-      return NextResponse.redirect(url);
-    }
-  }
+  // Conversation routes are open for prototyping
+  // But we ensure there's always a user_id (real or anonymous) for database operations
 
   // Redirect authenticated users away from auth pages
   // But allow access to callback route

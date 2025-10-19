@@ -48,11 +48,13 @@ const CATEGORY_TITLES: Record<RiteOfPassage, string> = {
 interface ConversationFlowProps {
   category: RiteOfPassage;
   sessionId: string;
+  userId: string;
 }
 
 export default function ConversationFlow({
   category,
   sessionId,
+  userId,
 }: ConversationFlowProps) {
   const [currentScreen, setCurrentScreen] = useState<Screen>("start-recording");
   const [currentMessage, setCurrentMessage] = useState<string>("");
@@ -458,19 +460,12 @@ export default function ConversationFlow({
 
     // Create session in database
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        console.error("No authenticated user");
-        return;
-      }
-
+      // Use the userId passed as prop (authenticated or anonymous)
       const { data: sessionData, error: sessionError } = await supabase
         .from("sessions")
         .insert({
           id: sessionId,
-          user_id: user.id,
+          user_id: userId,
           rite_of_passage: category,
           status: "active",
         })
