@@ -48,7 +48,13 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect authenticated users away from auth pages
+  // But allow access to callback route
   if (request.nextUrl.pathname.startsWith("/auth/") && user) {
+    // Allow access to callback route
+    if (request.nextUrl.pathname === "/auth/callback") {
+      return supabaseResponse;
+    }
+
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
