@@ -90,13 +90,8 @@ export default function ConversationFlow({
 
       try {
         // Step 1: Upload audio to storage
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) {
-          console.error("No authenticated user");
-          return;
-        }
+        // Note: We use the userId prop which works for both authenticated and anonymous users
+        console.log("Processing segment for user:", userId);
 
         // Upload audio file
         const audioFormData = new FormData();
