@@ -33,9 +33,10 @@ export default function ConversationPage({ params }: ConversationPageProps) {
         setUserId(user.id);
       } else {
         // Create/get anonymous user ID from localStorage
+        // Use a proper UUID format (without prefix) for database compatibility
         let anonymousId = localStorage.getItem("anonymous_user_id");
         if (!anonymousId) {
-          anonymousId = `anon_${uuidv4()}`;
+          anonymousId = uuidv4(); // Just use the UUID directly
           localStorage.setItem("anonymous_user_id", anonymousId);
         }
         setUserId(anonymousId);
