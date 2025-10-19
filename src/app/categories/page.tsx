@@ -42,15 +42,15 @@ const categories: Category[] = [
 
 export default function Categories() {
   return (
-    <main className="h-screen w-screen bg-black text-white flex items-center justify-center overflow-y-auto">
+    <main className="h-screen w-screen bg-black text-white flex items-center justify-center overflow-hidden">
       {/* Mobile-First Layout - Contained within viewport */}
-      <div className="w-full h-full flex flex-col items-center py-6 px-6 md:py-8 md:px-12">
+      <div className="w-full h-full flex flex-col items-center justify-center py-4 px-4 md:py-6 md:px-8">
         {/* Header Title */}
         <h1
-          className="text-center text-white mb-6 md:mb-8 flex-shrink-0"
+          className="text-center text-white mb-3 md:mb-4 flex-shrink-0"
           style={{
             fontFamily: "var(--font-mansalva)",
-            fontSize: "clamp(24px, 6vw, 32px)",
+            fontSize: "clamp(20px, 5vw, 28px)",
             lineHeight: "1.2",
             letterSpacing: "0.01em",
           }}
@@ -60,31 +60,31 @@ export default function Categories() {
           to dig into!
         </h1>
 
-        {/* Category Grid - Takes remaining space */}
-        <div className="w-full flex-1 flex items-center justify-center overflow-y-auto">
-          <div className="w-full max-w-2xl grid grid-cols-2 gap-3 md:gap-4 lg:gap-6 auto-rows-fr">
+        {/* Category Grid - Contained within remaining space */}
+        <div className="w-full flex-shrink-0 flex items-center justify-center max-h-[calc(100vh-120px)]">
+          <div className="w-full max-w-xl grid grid-cols-2 gap-2 md:gap-3 lg:gap-4">
             {categories.map((category) => (
               <Link
                 key={category.title}
                 href={category.href}
-                className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 flex flex-col"
+                className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 flex flex-col aspect-square"
               >
-                {/* Image Container */}
-                <div className="relative w-full aspect-square">
+                {/* Image Container - Takes most of the space */}
+                <div className="relative w-full flex-1">
                   <Image
                     src={category.image}
                     alt={category.title}
                     fill
-                    className="object-contain p-4"
+                    className="object-contain p-3 md:p-4"
                   />
                 </div>
 
-                {/* Title */}
+                {/* Title - Fixed height at bottom */}
                 <div
-                  className="text-center text-black py-3 md:py-4 flex-shrink-0"
+                  className="text-center text-black py-2 md:py-3 flex-shrink-0"
                   style={{
                     fontFamily: "var(--font-mansalva)",
-                    fontSize: "clamp(16px, 3.5vw, 20px)",
+                    fontSize: "clamp(14px, 3vw, 18px)",
                     letterSpacing: "0.01em",
                   }}
                 >
