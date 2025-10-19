@@ -7,6 +7,12 @@ export async function GET(request: NextRequest) {
   const next = searchParams.get("next") ?? "/";
 
   if (code) {
+    const response = NextResponse.next({
+      request: {
+        headers: request.headers,
+      },
+    });
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -17,7 +23,7 @@ export async function GET(request: NextRequest) {
           },
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value, options }) =>
-              request.cookies.set(name, value, options)
+              response.cookies.set(name, value, options)
             );
           },
         },
@@ -25,11 +31,11 @@ export async function GET(request: NextRequest) {
     );
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    
+
     if (!error) {
       const forwardedHost = request.headers.get("x-forwarded-host");
       const isLocalEnv = process.env.NODE_ENV === "development";
-      
+
       let redirectUrl;
       if (isLocalEnv) {
         redirectUrl = `${origin}${next}`;
@@ -38,8 +44,10 @@ export async function GET(request: NextRequest) {
       } else {
         redirectUrl = `${origin}${next}`;
       }
-      
-      return NextResponse.redirect(redirectUrl);
+
+      return NextResponse.redirect(redirectUrl, {
+        headers: response.headers,
+      });
     }
   }
 
