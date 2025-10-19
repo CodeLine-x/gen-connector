@@ -1,7 +1,34 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Home() {
+  const supabase = createClient();
+
+  useEffect(() => {
+    // Handle OAuth callback if there are URL parameters
+    const handleAuthCallback = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      
+      if (code) {
+        try {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (!error) {
+            // Clear the URL parameters after successful authentication
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        } catch (error) {
+          console.error('Auth callback error:', error);
+        }
+      }
+    };
+
+    handleAuthCallback();
+  }, [supabase]);
   return (
     <main className="h-screen w-screen bg-black text-white flex items-center justify-center overflow-y-auto">
       {/* Mobile-First Layout - Contained within viewport */}
