@@ -38,12 +38,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Protect conversation routes
-  if (
-    request.nextUrl.pathname.startsWith("/coming-of-age") ||
-    request.nextUrl.pathname.startsWith("/birth-childhood") ||
-    request.nextUrl.pathname.startsWith("/marriage") ||
-    request.nextUrl.pathname.startsWith("/death")
-  ) {
+  if (request.nextUrl.pathname.startsWith("/conversation/")) {
     if (!user) {
       // Redirect to login if not authenticated
       const url = request.nextUrl.clone();
