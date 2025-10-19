@@ -24,17 +24,19 @@ export default function ConversationPage({ params }: ConversationPageProps) {
 
     // Get or create user ID (authenticated or anonymous)
     const initializeUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (user) {
         // Use authenticated user ID
         setUserId(user.id);
       } else {
         // Create/get anonymous user ID from localStorage
-        let anonymousId = localStorage.getItem('anonymous_user_id');
+        let anonymousId = localStorage.getItem("anonymous_user_id");
         if (!anonymousId) {
           anonymousId = `anon_${uuidv4()}`;
-          localStorage.setItem('anonymous_user_id', anonymousId);
+          localStorage.setItem("anonymous_user_id", anonymousId);
         }
         setUserId(anonymousId);
       }
@@ -54,5 +56,11 @@ export default function ConversationPage({ params }: ConversationPageProps) {
     );
   }
 
-  return <ConversationFlow category={category} sessionId={sessionId} userId={userId} />;
+  return (
+    <ConversationFlow
+      category={category}
+      sessionId={sessionId}
+      userId={userId}
+    />
+  );
 }

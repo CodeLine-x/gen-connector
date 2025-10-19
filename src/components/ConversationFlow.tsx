@@ -403,16 +403,25 @@ export default function ConversationFlow({
         setGeneratedVideoUrl(videoData.videoUrl);
 
         // Update session status to completed
-        const { error: updateError } = await supabase
+        const { data: updateData, error: updateError } = await supabase
           .from("sessions")
           .update({
             status: "completed",
             has_audio: selectedSongUrl ? true : false, // Mark if audio was available
           })
-          .eq("id", sessionId);
+          .eq("id", sessionId)
+          .select();
 
         if (updateError) {
-          console.error("Error updating session status:", updateError);
+          console.error("Error updating session status:", {
+            error: updateError,
+            message: updateError.message,
+            details: updateError.details,
+            hint: updateError.hint,
+            code: updateError.code,
+          });
+        } else {
+          console.log("Session status updated successfully:", updateData);
         }
 
         setCurrentScreen("video");
